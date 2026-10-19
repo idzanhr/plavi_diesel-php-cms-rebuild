@@ -271,7 +271,7 @@ final class Stations
         $generatedAt = date('c');
 
         // Assets first, so their .gz exist before pages reference the new hashes.
-        foreach (['/assets/css/site.css', '/assets/js/site.js', '/assets/js/theme-init.js', '/favicon.svg'] as $asset) {
+        foreach (['/assets/css/site.css', '/assets/js/site.js', '/assets/js/hours.js', '/assets/js/theme-init.js', '/favicon.svg'] as $asset) {
             if (is_file($dir . $asset)) self::writeGzip($dir . $asset, (string) file_get_contents($dir . $asset));
         }
         self::atomicWrite("$dir/data/stations.json", json_encode(['generated_at' => $generatedAt, 'stations' => $rows], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n", true);

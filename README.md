@@ -159,6 +159,32 @@ shown on the site (e.g. "Radovi na postaji") and optional **Od / Do** dates.
   * **Closures you set yourself are never changed by the sync.** An automatic closure stays automatic while you only
     edit its note; once you enter Od/Do dates it becomes yours.
 
+## "Sada radi" – open right now
+
+Every card with working hours gets a bubble computed in the visitor's browser against the **current Zagreb time**
+(refreshed every minute): green **Sada radi · do 20:00**, green **Non-stop · sada radi** for 0–24 stations, red
+**Sada ne radi · otvara sutra u 06:00**, grey **Provjerite radno vrijeme** when the hours cannot be read. It never
+guesses. **Prikaži → Sada rade** shows only stations open now (`?prikaz=sada`); stations without hours are left out
+and counted next to "Prikazano".
+
+* Reads the ina.hr formats: `06-22`, `6:00 - 22:00`, `07-14, 15-20`, `0-24` / `NON-STOP`, `22-06` (past midnight),
+  `NE RADI`, `PRIVREMENO ZATVORENO`. Seasonal rows whose label has a date range (`Sezonsko 01.06.-30.09.`) apply in
+  that range, otherwise the `Redovno` row.
+* **Holidays**: dated entries in the Blagdani column (`25.12.2026. NE RADI 26.12.2026. 08-14`) win; a plain value
+  (`07-13`) applies on every Croatian public holiday (incl. Uskrs, Uskrsni ponedjeljak, Tijelovo). A holiday with no
+  holiday hours shows "(blagdan – provjerite)", except for non-stop stations, which stay non-stop.
+* Temporarily closed stations show the red closure badge instead of a bubble.
+* Logic: `assets/js/hours.js` (shared by the page and `tests/hours.test.js`).
+
+## Accessibility (WCAG 2.2 AA)
+
+* Colour is never the only cue: every bubble and badge says it in words (+ a dot).
+* Larger text: body 16 px / line-height 1.6, card text 16 px, labels and hours ≥ 14 px; follows the browser's font size.
+* `tests/contrast.test.js` checks every text/background token pair in light and dark mode (≥ 4.5:1), plus input
+  borders and the focus ring (≥ 3:1, WCAG 1.4.11). It fixed several pairs inherited from the original design
+  (grey text, near-invisible input borders, white-on-light-blue buttons in dark mode).
+* Checked with axe-core (WCAG 2.0/2.1/2.2 A + AA rules): 0 violations in light, dark and mobile.
+
 ### Working hours from ina.hr (optional cron)
 
 Port of the original sync job – updates only `ina_url` + `working_hours`, never erases hours if INA's page is
@@ -192,4 +218,6 @@ cp app/config.example.php app/config.php   # set dsn to 'sqlite:' . __DIR__ . '/
 mkdir -p var && php bin/install.php
 php -S 127.0.0.1:8000 -t . bin/dev-router.php   # same whitelist as production; http://127.0.0.1:8000/plava-nafta/
 php tests/run.php                          # 33 tests: TOTP/RFC 6238, replay, crypto, INA parser, import, closures
+node tests/hours.test.js                   # 17 tests: "Sada radi" – formats, overnight, non-stop, holidays
+node tests/contrast.test.js                # 40 checks: WCAG AA colour contrast, light + dark
 ```

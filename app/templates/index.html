@@ -41,10 +41,15 @@
       <select id="county">
         <option value="">Sve županije</option>
 {{COUNTY_OPTIONS}}      </select>
-      <label class="only-open"><input id="only-open" type="checkbox"> Samo otvorene</label>
+      <label class="sr-only" for="show">Prikaži</label>
+      <select id="show">
+        <option value="">Sve postaje</option>
+        <option value="now">Sada rade</option>
+        <option value="open">Bez privremeno zatvorenih</option>
+      </select>
     </form>
 
-    <p class="muted small" aria-live="polite">Prikazano: <span id="shown">{{TOTAL}}</span></p>
+    <p class="muted small" aria-live="polite">Prikazano: <span id="shown">{{TOTAL}}</span><span id="hidden-unknown" hidden></span></p>
 
     <div class="grid" id="stations">
 {{CARDS}}

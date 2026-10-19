@@ -192,7 +192,7 @@
     function renderHours() {
       hoursBox.replaceChildren.apply(hoursBox, f.working_hours.map(function (row, i) {
         function cell(k, ph) { return input({ value: row[k] || "", placeholder: ph, "aria-label": ph, oninput: function (e) { row[k] = e.target.value; } }); }
-        return h("div", { class: "hours-row" }, cell("label", "Naziv (npr. Redovno)"), cell("week", "Pon–Pet"), cell("sat", "Subota"), cell("sun", "Nedjelja"), cell("hol", "Blagdani"),
+        return h("div", { class: "hours-row" }, cell("label", "Naziv (npr. Redovno)"), cell("week", "Pon–Pet, npr. 06-22"), cell("sat", "Subota, npr. 07-14"), cell("sun", "Nedjelja, npr. NE RADI"), cell("hol", "Blagdani, npr. 25.12. NE RADI"),
           h("button", { type: "button", class: "btn-ghost", "aria-label": "Ukloni red", onclick: function () { f.working_hours.splice(i, 1); renderHours(); } }, "×"));
       }).concat([h("button", { type: "button", class: "btn-ghost", onclick: function () { f.working_hours.push({ label: "Redovno", week: "", sat: "", sun: "", hol: "" }); renderHours(); } }, "+ Red radnog vremena")]));
     }
@@ -234,7 +234,7 @@
       h("div", { class: "span2" }, h("p", { class: "label", text: "Kako znaju zvati postaju" }), chips,
         h("div", { class: "inline" }, newAlias, h("button", { type: "button", class: "btn-ghost", onclick: addAlias }, "Dodaj"))),
       h("div", { class: "span2" }, h("p", { class: "label", text: "Radno vrijeme" }),
-        h("p", { class: "muted small", text: "Ako je postavljen bin/sync-ina-hours.php, radno vrijeme se automatski osvježava s ina.hr." }), hoursBox),
+        h("p", { class: "muted small", text: "Ako je postavljen bin/sync-ina-hours.php, radno vrijeme se automatski osvježava s ina.hr. Za oznaku „Sada radi” upisujte kao na ina.hr: 06-22, 0-24 (non-stop), 22-06 (preko ponoći), NE RADI; blagdani s datumom: 25.12. NE RADI 26.12. 08-14." }), hoursBox),
       h("div", { class: "span2 inline" }, saveBtn, h("button", { type: "button", class: "btn-ghost", onclick: function () { onDone(false); } }, "Odustani"))
     );
     // Focus the first field once the form is in the page, unless the user is already typing in it.

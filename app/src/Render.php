@@ -23,6 +23,7 @@ final class Render
         $u = fn(string $p) => self::e(self::assetUrl($webRoot, $p));
         return '  <script src="' . $u('/assets/js/theme-init.js') . '"></script>' . "\n"
             . '  <link rel="stylesheet" href="' . $u('/assets/css/site.css') . '">' . "\n"
+            . '  <script src="' . $u('/assets/js/hours.js') . '" defer></script>' . "\n"
             . '  <script src="' . $u('/assets/js/site.js') . '" defer></script>';
     }
 
@@ -79,6 +80,8 @@ final class Render
             // The browser re-evaluates these dates on load (site.js), so closures start/end on time.
             $h .= ' data-status="closed" data-from="' . self::e($s['closed_from']) . '" data-until="' . self::e($s['closed_until']) . '"';
         }
+        // Raw hours for the "open now" bubble, computed in the browser against the current time.
+        if ($s['working_hours']) $h .= ' data-hours="' . self::e(json_encode($s['working_hours'], JSON_UNESCAPED_UNICODE)) . '"';
         $h .= '>';
         $h .= '<p class="card-county">' . self::e($s['county']) . '</p>';
         if ($status === 'closed') {
@@ -91,6 +94,7 @@ final class Render
             }
         }
         $h .= '<h2 class="card-title">' . self::e($s['name']) . '</h2>';
+        $h .= '<p class="now" data-now hidden></p>';
         $h .= '<p class="card-address">' . self::e($place) . '</p>';
         if ($s['aliases'] !== '') {
             $h .= '<p class="card-aliases"><span>Zovu je: </span>' . self::e($s['aliases']) . '</p>';
