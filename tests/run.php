@@ -104,7 +104,7 @@ test('accepts only INA station pages', function () {
     eq(null, InaHours::safeUrl('https://www.ina.hr/station/test/?x=1'));
 });
 test('reads station links from the public finder', function () {
-    eq([['url' => 'https://www.ina.hr/station/babina-greda-2/', 'phone' => '0914971292']],
+    eq([['url' => 'https://www.ina.hr/station/babina-greda-2/', 'phones' => ['0914971292']]],
         InaHours::parseDirectory('<div id="mdata" stations=\'[{"url":"https://www.ina.hr/station/babina-greda-2/","contact_phone":"+385 91 4971 292"}]\'></div>'));
 });
 
@@ -284,6 +284,71 @@ test("'ina_auto_close' => false only flags, never closes", function () use ($por
     eq([0, 1], [$r['closed'], $r['notices']]);
     eq('open', $bg()['status']);
     PlavaNafta\Config::load(require __DIR__ . '/config.test.php');
+});
+
+echo "Finding the ina.hr page (Murter, Zadar I-istok)\n";
+$hoursPage = fn(string $week) => '<table class="station__info__tablebox__table"><tr><th>Radno vrijeme</th><th>Radni dan</th><th>Subota</th><th>Nedjelja</th><th>Blagdani</th></tr>'
+    . "<tr><td>Redovno</td><td>$week</td><td>06-21</td><td>07-20</td><td></td></tr></table>";
+foreach ([['Murter', '091 497 1263 ; 091 497 1474', 'Šibensko-kninska županija'], ['Zadar I-istok', '091 497 0558', 'Zadarska županija']] as [$n, $ph, $c]) {
+    Db::exec("INSERT INTO stations (name, address, phone, aliases, county, working_hours, updated_at) VALUES (?, '', ?, '', ?, '[]', ?)", [$n, $ph, $c, Db::now()]);
+}
+test('station addresses built from the name match ina.hr', function () {
+    eq('murter', InaHours::slug('Murter'));
+    eq('zadar-i-istok', InaHours::slug('Zadar I-istok'));
+    eq('cadavica', InaHours::slug('Čađavica'));
+    eq('dakovo-preradoviceva', InaHours::slug('Đakovo-Preradovićeva'));
+});
+test('a field with two numbers gives two call buttons, not one 20-digit number', function () {
+    eq(['091 497 1263', '091 497 1474'], InaHours::phoneNumbers('091 497 1263 ; 091 497 1474'));
+    eq(['0914971263', '0914971474'], InaHours::phoneKeys('+385 91 497 1263, 091 497 1474'));
+    eq(['01/234-567'], InaHours::phoneNumbers('01/234-567')); // a slash is part of a number
+    $html = Render::card(['name' => 'Murter', 'address' => '', 'postal_code' => '', 'city' => '', 'county' => '', 'phone' => '091 497 1263 ; 091 497 1474', 'aliases' => '', 'ina_url' => '', 'working_hours' => []]);
+    eq(true, str_contains($html, 'href="tel:0914971263">☎ 091 497 1263</a><a class="btn-phone" href="tel:0914971474">☎ 091 497 1474</a>'));
+});
+test('Murter: found through its second phone number in the ina.hr finder', function () use ($hoursPage) {
+    $dir = '<div id="mdata" stations=\'[{"url":"https://www.ina.hr/station/murter/","contact_phone":"091 4971 474"}]\'></div>';
+    InaHours::$fetch = fn(string $u) => match ($u) { InaHours::DIRECTORY_URL => $dir, 'https://www.ina.hr/station/murter/' => $hoursPage('06-22'), default => throw new RuntimeException('HTTP 404') };
+    $log = [];
+    $r = InaHours::sync(null, 'Murter', function ($l) use (&$log) { $log[] = $l; });
+    eq(1, $r['updated']);
+    $m = Db::one("SELECT ina_url, working_hours FROM stations WHERE name = 'Murter'");
+    eq('https://www.ina.hr/station/murter/', $m['ina_url']);
+    eq('06-22', json_decode($m['working_hours'], true)[0]['week']);
+    eq(true, str_contains($log[0], 'Murter: ažurirano s https://www.ina.hr/station/murter/'));
+});
+test('Zadar I-istok: phone shared by two finder entries → matched by name instead', function () use ($hoursPage) {
+    $dir = '<div id="mdata" stations=\'[{"url":"https://www.ina.hr/station/zadar-i-istok/","contact_phone":"091 497 0558"},'
+        . '{"url":"https://www.ina.hr/station/zadar-ii/","contact_phone":"091 497 0558"}]\'></div>';
+    $fetched = [];
+    InaHours::$fetch = function (string $u) use ($dir, $hoursPage, &$fetched) {
+        $fetched[] = $u;
+        return match ($u) { InaHours::DIRECTORY_URL => $dir, 'https://www.ina.hr/station/zadar-i-istok/' => $hoursPage('0-24'), default => throw new RuntimeException('HTTP 404') };
+    };
+    eq(1, InaHours::sync(null, 'Zadar I-istok')['updated']);
+    eq('https://www.ina.hr/station/zadar-i-istok/', Db::one("SELECT ina_url FROM stations WHERE name = 'Zadar I-istok'")['ina_url']);
+    eq(false, in_array('https://www.ina.hr/station/zadar-ii/', $fetched, true)); // the ambiguous phone match is not used
+});
+test('finder down: the address from the name is tried directly', function () use ($hoursPage) {
+    Db::exec("UPDATE stations SET ina_url = '', working_hours = '[]' WHERE name = 'Murter'");
+    InaHours::$fetch = fn(string $u) => $u === 'https://www.ina.hr/station/murter/' ? $hoursPage('07-21') : throw new RuntimeException('HTTP 503');
+    $r = InaHours::sync(null, 'Murter');
+    eq([1, false], [$r['updated'], $r['directoryAvailable']]);
+});
+test('a saved link that stopped working falls back to the next candidate', function () use ($hoursPage) {
+    Db::exec("UPDATE stations SET ina_url = 'https://www.ina.hr/station/murter-staro/' WHERE name = 'Murter'");
+    InaHours::$fetch = fn(string $u) => $u === 'https://www.ina.hr/station/murter/' ? $hoursPage('06-20') : throw new RuntimeException('HTTP 404');
+    eq(1, InaHours::sync(null, 'Murter')['updated']);
+    eq('https://www.ina.hr/station/murter/', Db::one("SELECT ina_url FROM stations WHERE name = 'Murter'")['ina_url']);
+});
+test('nothing found: the log says what was tried, saved hours stay', function () {
+    $before = Db::one("SELECT working_hours FROM stations WHERE name = 'Murter'")['working_hours'];
+    InaHours::$fetch = fn(string $u) => throw new RuntimeException('HTTP 404');
+    $log = [];
+    $r = InaHours::sync(null, 'Murter', function ($l) use (&$log) { $log[] = $l; });
+    eq(1, $r['failed']);
+    // The saved link and the name address are the same page here, so it is tried once, not twice.
+    eq(true, str_contains($log[1], 'Murter: stranica na ina.hr nije pronađena (spremljena poveznica https://www.ina.hr/station/murter/ → HTTP 404)'));
+    eq($before, Db::one("SELECT working_hours FROM stations WHERE name = 'Murter'")['working_hours']);
 });
 
 echo "\n$count tests, $failures failed\n";

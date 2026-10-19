@@ -64,6 +64,14 @@ try {
             }
             exit;
 
+        case 'POST ina-sync':
+            // "Dohvati s ina.hr" for one station, right now (same rules as the cron sync).
+            $id = (int) ($body['id'] ?? 0);
+            if (!Stations::find($id)) throw new HttpError(404, 'Postaja ne postoji.');
+            $lines = [];
+            $r = PlavaNafta\InaHours::sync(null, (string) $id, function (string $l) use (&$lines) { $lines[] = $l; });
+            Web::json(['result' => $r, 'log' => $lines, 'station' => Stations::find($id)]);
+
         case 'GET audit':
             Web::json(['entries' => Audit::recent(100)]);
 

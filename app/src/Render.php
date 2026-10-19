@@ -84,7 +84,6 @@ final class Render
         $search = implode(' ', [$s['name'], $s['city'], $s['postal_code'], $s['address'], $s['phone'], $s['aliases'], $s['county'],
             $status === 'closed' ? 'privremeno zatvoreno ' . ($s['status_note'] ?? '') : '']);
         $place = trim($s['address'] . ', ' . trim($s['postal_code'] . ' ' . $s['city']), ', ');
-        $tel = preg_replace('/[^\d+]/', '', $s['phone']);
 
         $h = '<article class="card' . ($state === 'closed' ? ' card-closed' : '') . '" data-county="' . self::e($s['county']) . '" data-search="' . self::e($search) . '"';
         if ($status === 'closed') {
@@ -127,7 +126,10 @@ final class Render
             $h .= '</div>';
         }
         $h .= '<div class="card-actions">';
-        if ($s['phone'] !== '') $h .= '<a class="btn-phone" href="tel:' . self::e($tel) . '">☎ ' . self::e($s['phone']) . '</a>';
+        // Several numbers in one field ("091 497 1263 ; 091 497 1474") get a call button each.
+        foreach (InaHours::phoneNumbers($s['phone']) as $number) {
+            $h .= '<a class="btn-phone" href="tel:' . self::e(preg_replace('/[^\d+]/', '', $number)) . '">☎ ' . self::e($number) . '</a>';
+        }
         if ($s['ina_url'] !== '') $h .= '<a class="btn-link" href="' . self::e($s['ina_url']) . '" target="_blank" rel="noopener noreferrer">INA.hr ↗</a>';
         $h .= '<a class="btn-link" href="' . self::e(self::mapUrl($s)) . '" target="_blank" rel="noopener noreferrer"'
             . ' aria-label="Karta: ' . self::e($s['name']) . ' (Google Karte, nova kartica)">Karta ↗</a>';

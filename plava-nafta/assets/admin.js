@@ -234,6 +234,19 @@
       h("div", { class: "span2" }, h("p", { class: "label", text: "Kako znaju zvati postaju" }), chips,
         h("div", { class: "inline" }, newAlias, h("button", { type: "button", class: "btn-ghost", onclick: addAlias }, "Dodaj"))),
       h("div", { class: "span2" }, h("p", { class: "label", text: "Radno vrijeme" }),
+        s ? h("div", { class: "inline" }, h("button", { type: "button", class: "btn-ghost", onclick: function (e) {
+          var b = e.currentTarget; b.disabled = true; b.textContent = "Dohvaćam…";
+          api("ina-sync", { id: s.id }).then(function (d) {
+            b.disabled = false; b.textContent = "Dohvati s ina.hr";
+            var ok = d.result.updated + d.result.unchanged > 0;
+            toast((ok ? "ina.hr: " : "Nije uspjelo – ") + (d.log.join(" ") || "nema odgovora"), !ok);
+            if (d.station) {
+              f.working_hours = d.station.working_hours; f.ina_url = d.station.ina_url;
+              var urlInput = form.querySelector('input[type=url]'); if (urlInput) urlInput.value = f.ina_url;
+              renderHours();
+            }
+          }, function (err) { b.disabled = false; b.textContent = "Dohvati s ina.hr"; fail(err); });
+        } }, "Dohvati s ina.hr"), h("span", { class: "muted small", text: "Odmah preuzima radno vrijeme ove postaje s ina.hr i objavljuje ga." })) : null,
         h("p", { class: "muted small", text: "Ako je postavljen bin/sync-ina-hours.php, radno vrijeme se automatski osvježava s ina.hr. Za oznaku „Sada radi” upisujte kao na ina.hr: 06-22, 0-24 (non-stop), 22-06 (preko ponoći), NE RADI; blagdani s datumom: 25.12. NE RADI 26.12. 08-14." }), hoursBox),
       h("div", { class: "span2 inline" }, saveBtn, h("button", { type: "button", class: "btn-ghost", onclick: function () { onDone(false); } }, "Odustani"))
     );

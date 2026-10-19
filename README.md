@@ -202,7 +202,13 @@ broken, and re-publishes the site:
 ```
 * 4 * * *  php /path/to/bin/sync-ina-hours.php     # 1/60 of the stations every minute between 04:00–04:59
 php bin/sync-ina-hours.php --all                   # everything at once
+php bin/sync-ina-hours.php --station="Murter"      # one station, prints which ina.hr page was used or why not
 ```
+
+How the sync finds a station's ina.hr page (first one with a readable hours table wins): the saved INA link →
+a **unique** phone match in the ina.hr finder (every number of a field like `091 497 1263 ; 091 497 1474`) →
+a unique name match in the finder (`Zadar I-istok` → `/station/zadar-i-istok/`, also `-2` variants) → the address
+built from the name, tried directly. In the editor, **Dohvati s ina.hr** does the same for one station immediately.
 
 ### CLI helpers
 
