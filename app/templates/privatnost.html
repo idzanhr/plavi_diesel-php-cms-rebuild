@@ -28,7 +28,7 @@
           <li><strong>Posjetitelji (bez prijave):</strong> ne prikupljamo osobne podatke. Ne koristimo alate za analitiku, oglašavanje ni praćenje. Javni dio stranice je statičan i ne postavlja kolačiće.</li>
           <li><strong>Administrator (jedini ovlašteni korisnik):</strong> adresa e-pošte i sažetak lozinke (bcrypt hash s nasumično generiranom soli), te obavezni podaci za dvofaktorsku autentifikaciju (TOTP tajni ključ, pohranjen šifrirano algoritmom AES-256-GCM) i sažeci jednokratnih rezervnih kodova. Prijava je moguća samo e-poštom i lozinkom, uz obavezni jednokratni kod iz aplikacije za autentifikaciju.</li>
           <li><strong>Sigurnosni zapisi prijave:</strong> IP adresa i vrijeme pokušaja prijave administratorskog sučelja, radi zaštite od pogađanja lozinke. Čuvaju se najdulje 30 dana.</li>
-          <li><strong>Tehnički zapisi poslužitelja:</strong> standardni zapisi pristupa (IP adresa, vrijeme, preglednik) koje vodi pružatelj hostinga radi sigurnosti i rada sustava. Zapisi se čuvaju najdulje 30 dana, nakon čega se automatski brišu.</li>
+          <li><strong>Tehnički zapisi poslužitelja:</strong> standardni zapisi pristupa (IP adresa, vrijeme, preglednik) koje vode pružatelji hostinga i CDN usluge (vidi niže) radi sigurnosti i rada sustava. Zapisi se čuvaju najdulje 30 dana, nakon čega se automatski brišu.</li>
         </ul>
       </section>
       <section>
@@ -45,7 +45,12 @@
       </section>
       <section>
         <h2>Tko ima pristup podacima</h2>
-        <p>Podacima administratora ima pristup samo administrator stranice. Stranica i baza podataka (PHP i MySQL) nalaze se na poslužitelju pružatelja usluge hostinga, koji podatke obrađuje isključivo po našim uputama i ne koristi ih u vlastite marketinške svrhe. Podatke ne prodajemo niti dijelimo s trećim stranama u marketinške svrhe.</p>
+        <p>Podacima administratora ima pristup samo administrator stranice. Obrada se obavlja uz pomoć sljedećih pružatelja usluga, koji podatke obrađuju isključivo po našim uputama:</p>
+        <ul>
+          <li><strong>Hetzner Online GmbH</strong> (<a href="https://www.hetzner.com" target="_blank" rel="noopener noreferrer">hetzner.com</a>) – VPS poslužitelj na kojem se nalaze stranica i baza podataka (PHP i MySQL); podatkovni centar u Njemačkoj (EU).</li>
+          <li><strong>BunnyWay d.o.o. – Bunny.net</strong> (<a href="https://bunny.net" target="_blank" rel="noopener noreferrer">bunny.net</a>) – CDN i DNS usluge te zaštita stranice; tvrtka sa sjedištem u Sloveniji (EU). Promet prema stranici prolazi kroz njihovu mrežu, pa obrađuju IP adresu i tehničke podatke zahtjeva. Sadržaj se posjetitelju isporučuje s najbližeg poslužitelja te mreže.</li>
+        </ul>
+        <p>Oba pružatelja imaju sjedište u Europskoj uniji i ne koriste podatke u vlastite marketinške svrhe. Podatke ne prodajemo niti dijelimo s trećim stranama u marketinške svrhe.</p>
         <p>Poveznica <strong>„Karta ↗”</strong> uz svaku postaju otvara Google Karte (Google Ireland Ltd.) u novoj kartici. Stranica sama ne učitava kartu niti Googleove skripte; podaci se Googleu prenose tek kada kliknete poveznicu, prema <a href="https://policies.google.com/privacy?hl=hr" target="_blank" rel="noopener noreferrer">Googleovim pravilima o privatnosti</a>.</p>
       </section>
       <section>
