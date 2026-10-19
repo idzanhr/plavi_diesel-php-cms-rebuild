@@ -11,6 +11,26 @@ final class Render
         return htmlspecialchars((string) $s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
     }
 
+    /** Asset URLs carry a content hash so nginx can cache them for a year (immutable). */
+    public static function assetUrl(string $publicDir, string $path): string
+    {
+        $file = $publicDir . $path;
+        return $path . (is_file($file) ? '?v=' . substr(hash_file('sha256', $file), 0, 10) : '');
+    }
+
+    public static function headAssets(string $publicDir): string
+    {
+        $u = fn(string $p) => self::e(self::assetUrl($publicDir, $p));
+        return '  <script src="' . $u('/assets/js/theme-init.js') . '"></script>' . "\n"
+            . '  <link rel="stylesheet" href="' . $u('/assets/css/site.css') . '">' . "\n"
+            . '  <script src="' . $u('/assets/js/site.js') . '" defer></script>';
+    }
+
+    public static function page(string $template, string $publicDir): string
+    {
+        return strtr($template, ['{{HEAD_ASSETS}}' => self::headAssets($publicDir)]);
+    }
+
     public static function index(string $template, array $rows, string $generatedAt): string
     {
         $counts = [];

@@ -53,6 +53,17 @@
   function fail(err) { toast(err.message, true); }
   function input(attrs) { return h("input", Object.assign({ class: "input" }, attrs)); }
   function field(label, control, cls) { return h("label", { class: "field " + (cls || "") }, h("span", { text: label }), control); }
+  var qrReady;
+  function loadQr() {
+    qrReady = qrReady || boot.qrScripts.reduce(function (p, src) {
+      return p.then(function () {
+        return new Promise(function (resolve, reject) {
+          document.head.append(h("script", { src: src, onload: resolve, onerror: function () { reject(new Error("QR skripta se nije učitala.")); } }));
+        });
+      });
+    }, Promise.resolve());
+    return qrReady;
+  }
   function codesList(codes) { return h("ul", { class: "codes" }, codes.map(function (c) { return h("li", null, h("code", { text: c })); })); }
 
   // ---- layout
@@ -278,7 +289,7 @@
             rot.out.replaceChildren(h("p", { class: "flash flash-info", text: "Nova aplikacija je aktivna. Novi rezervni kodovi:" }), codesList(r.codes));
           }, fail);
         } }, "Potvrdi"))));
-      window.renderQr(qr, d.uri);
+      loadQr().then(function () { window.renderQr(qr, d.uri); }, fail);
     }
   }
 

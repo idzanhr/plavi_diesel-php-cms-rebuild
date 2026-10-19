@@ -90,6 +90,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
 @media (min-width: 1024px) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .card { border: 1px solid var(--border); border-radius: calc(var(--radius) + 4px); background: var(--card); color: var(--card-foreground); padding: 1.25rem; box-shadow: var(--shadow); transition: border-color .15s; }
 .card:hover { border-color: var(--primary); }
+/* 129 cards: let the browser skip layout/paint of off-screen ones. */
+.grid > .card { content-visibility: auto; contain-intrinsic-size: auto 220px; }
 .card-county { font-size: .75rem; font-weight: 500; text-transform: uppercase; letter-spacing: .05em; color: var(--accent-text); }
 .card-title { margin-top: .25rem; font-size: 1.125rem; font-weight: 600; }
 .card-address { font-size: .875rem; color: var(--muted-foreground); }

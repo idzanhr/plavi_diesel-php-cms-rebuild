@@ -61,6 +61,13 @@ $stage = Auth::stage();
 $flash = Web::flash();
 $csrf = Web::csrfToken();
 
+/** Admin asset URL with a content hash, so browsers may cache it long-term. */
+function asset(string $rel): string
+{
+    global $self;
+    return $self . $rel . '?v=' . substr(hash_file('sha256', __DIR__ . '/' . $rel), 0, 10);
+}
+
 function layout(string $title, string $body, string $width = 'auth'): void
 {
     global $self, $csrf, $stage;
@@ -74,10 +81,9 @@ function layout(string $title, string $body, string $width = 'auth'): void
   <meta name="robots" content="noindex, nofollow, noarchive">
   <title><?= $e($title) ?> – Plavi dizel admin</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-  <script src="/assets/js/theme-init.js"></script>
-  <link rel="stylesheet" href="/assets/css/site.css">
-  <link rel="stylesheet" href="<?= $e($self) ?>assets/admin.css">
-  <script src="/assets/js/site.js" defer></script>
+<?= Render::headAssets(dirname(__DIR__)) ?>
+
+  <link rel="stylesheet" href="<?= $e(asset('assets/admin.css')) ?>">
 </head>
 <body>
 <main class="page">
@@ -153,7 +159,7 @@ if ($stage === 'no-admin') {
       <button class="btn-primary wide" name="action" value="enroll">Aktiviraj</button>
       <button class="btn-ghost wide" name="action" value="logout" formnovalidate>Odjava</button>
     </form>
-    <script src="' . $e($self) . 'assets/qrcode.js"></script><script src="' . $e($self) . 'assets/qr-render.js"></script>');
+    <script src="' . $e(asset('assets/qrcode.js')) . '"></script><script src="' . $e(asset('assets/qr-render.js')) . '"></script>');
     }
 } elseif ($stage === 'change-password') {
     layout('Nova lozinka', '
@@ -174,12 +180,12 @@ if ($stage === 'no-admin') {
         'counties' => Stations::COUNTIES,
         'email' => Auth::admin()['email'],
         'recoveryLeft' => Auth::unusedRecoveryCodes(),
+        // Loaded on demand: only needed when moving 2FA to a new phone.
+        'qrScripts' => [asset('assets/qrcode.js'), asset('assets/qr-render.js')],
     ];
     layout('Uređivanje', recoveryHtml() . flashHtml($flash) . '
     <div id="app" data-boot="' . $e(json_encode($boot, JSON_UNESCAPED_UNICODE)) . '"><p class="muted">Učitavanje…</p></div>
-    <script src="' . $e($self) . 'assets/qrcode.js"></script>
-    <script src="' . $e($self) . 'assets/qr-render.js"></script>
-    <script src="' . $e($self) . 'assets/admin.js"></script>', 'wide');
+    <script src="' . $e(asset('assets/admin.js')) . '"></script>', 'wide');
 }
 
 /** Recovery codes are shown exactly once, right after 2FA is enrolled. */

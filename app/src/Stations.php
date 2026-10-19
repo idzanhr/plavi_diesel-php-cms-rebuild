@@ -206,23 +206,49 @@ final class Stations
         ], self::all());
     }
 
-    /** Regenerates public/index.html and public/data/stations.json from the database. */
+    /**
+     * Regenerates every public file from the database and app/templates/:
+     * index.html, privatnost.html, kolacici.html, 404.html, data/stations.json,
+     * plus pre-compressed .gz copies that nginx serves directly (gzip_static).
+     */
     public static function publish(): void
     {
         $dir = rtrim(Config::get('public_dir'), '/');
+        $templates = dirname(__DIR__) . '/templates';
         $rows = self::publicRows();
         $generatedAt = date('c');
-        self::atomicWrite("$dir/data/stations.json", json_encode(['generated_at' => $generatedAt, 'stations' => $rows], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . "\n");
-        $template = (string) file_get_contents(dirname(__DIR__) . '/templates/index.html');
-        self::atomicWrite("$dir/index.html", Render::index($template, $rows, $generatedAt));
+
+        // Assets first, so their .gz exist before pages reference the new hashes.
+        foreach (['/assets/css/site.css', '/assets/js/site.js', '/assets/js/theme-init.js', '/favicon.svg'] as $asset) {
+            if (is_file($dir . $asset)) self::writeGzip($dir . $asset, (string) file_get_contents($dir . $asset));
+        }
+        self::atomicWrite("$dir/data/stations.json", json_encode(['generated_at' => $generatedAt, 'stations' => $rows], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n", true);
+        $index = Render::page((string) file_get_contents("$templates/index.html"), $dir);
+        self::atomicWrite("$dir/index.html", Render::index($index, $rows, $generatedAt), true);
+        foreach (['privatnost', 'kolacici', '404'] as $page) {
+            self::atomicWrite("$dir/$page.html", Render::page((string) file_get_contents("$templates/$page.html"), $dir), true);
+        }
     }
 
-    private static function atomicWrite(string $path, string $content): void
+    private static function writeGzip(string $path, string $content): void
+    {
+        $gz = $path . '.gz';
+        if (is_file($gz) && filemtime($gz) >= filemtime($path)) return;
+        self::atomicWrite($gz, gzencode($content, 9));
+        touch($gz, filemtime($path)); // gzip_static expects matching mtimes for If-Modified-Since
+    }
+
+    private static function atomicWrite(string $path, string $content, bool $withGzip = false): void
     {
         if (!is_dir(dirname($path))) mkdir(dirname($path), 0755, true);
         $tmp = $path . '.' . bin2hex(random_bytes(4)) . '.tmp';
         if (file_put_contents($tmp, $content) === false) throw new \RuntimeException("Cannot write $path");
         chmod($tmp, 0644);
         if (!rename($tmp, $path)) { @unlink($tmp); throw new \RuntimeException("Cannot replace $path"); }
+        if ($withGzip) {
+            clearstatcache(true, $path);
+            self::atomicWrite("$path.gz", gzencode($content, 9));
+            touch("$path.gz", filemtime($path));
+        }
     }
 }
