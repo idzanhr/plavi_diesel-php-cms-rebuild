@@ -9,12 +9,15 @@
   /**
    * One cell of the hours table → { kind: "closed" } | { kind: "ranges", ranges: [[start, end], …] }
    * | null (empty / unreadable). Minutes from midnight; end > 1440 means "past midnight".
-   * Understands "06-20", "6:00 - 22:00", "06-14, 15-20", "0-24", "NON-STOP", "22-06", "NE RADI".
+   * Understands "06-20", "6:00 - 22:00", "06-14, 15-20", "0-24", "NON-STOP" / "NON - STOP" / "Non – Stop",
+   * "24 h", "22-06", "NE RADI".
    */
   function parseSpec(text) {
     var t = String(text || "").toUpperCase().replace(/\s+/g, " ").trim();
     if (!t) return null;
-    if (/NON[\s-]?STOP|0-24 SATA|24\s*\/\s*7|24 SATA/.test(t)) return { kind: "ranges", ranges: [[0, DAY]] };
+    // Non-stop in any spelling (ina.hr writes e.g. "NON - STOP"); "24 h" only as the whole cell,
+    // so "06-24 h" stays an ordinary range.
+    if (/NON\s*[-–—]?\s*STOP|24\s*\/\s*7|^24\s*(?:H|SATA)$/.test(t)) return { kind: "ranges", ranges: [[0, DAY]] };
     var re = /(\d{1,2})(?:[:.h](\d{2}))?\s*(?:-|–|—|DO)\s*(\d{1,2})(?:[:.h](\d{2}))?/g, m, ranges = [];
     while ((m = re.exec(t))) {
       var sh = +m[1], sm = +(m[2] || 0), eh = +m[3], em = +(m[4] || 0);

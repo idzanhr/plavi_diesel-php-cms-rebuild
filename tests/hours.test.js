@@ -34,6 +34,16 @@ test("hour formats", () => {
   eq(null, H.parseSpec(""));
   eq(null, H.parseSpec("prema dogovoru"));
 });
+test("non-stop in every spelling (Plitvice-Čatrnja: \"NON - STOP\")", () => {
+  const all = { kind: "ranges", ranges: [[0, 1440]] };
+  for (const t of ["NON - STOP", "NON-STOP", "NONSTOP", "NON STOP", "Non – Stop", "non—stop", "0 - 24", "0-24h", "00:00 - 24:00", "24 h", "24H", "24 SATA", "0-24 SATA", "24/7"]) {
+    eq([t, all], [t, H.parseSpec(t)]);
+  }
+  eq({ kind: "ranges", ranges: [[360, 1440]] }, H.parseSpec("06-24 h")); // not mistaken for non-stop
+  const plitvice = [{ label: "Redovno", week: "NON - STOP", sat: "NON - STOP", sun: "NON - STOP", hol: "NON - STOP" }];
+  eq("Non-stop · sada radi", text(plitvice, "2026-10-20", "03:15"));
+  eq("Non-stop · sada radi", text(plitvice, "2026-12-25", "12:00")); // holiday column says NON - STOP too
+});
 test("holiday column: dated entries and a generic value", () => {
   const h = H.parseHolidays("25.12.2024. NE RADI 26.12.2024. 06-20");
   eq(2, h.dated.length);
