@@ -1,0 +1,35 @@
+# Apache config for the static public site + hidden PHP admin.
+Options -Indexes
+DirectoryIndex index.html index.php
+ErrorDocument 404 /404.html
+
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set X-Frame-Options "DENY"
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+  Header always set Content-Security-Policy "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'"
+  <FilesMatch "\.(css|js|svg|png)$">
+    Header set Cache-Control "public, max-age=86400"
+  </FilesMatch>
+  <FilesMatch "^(index\.html|stations\.json)$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+</IfModule>
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  # Force HTTPS (uncomment once TLS is configured)
+  # RewriteCond %{HTTPS} !=on
+  # RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+  # Pretty URLs from the original site
+  RewriteRule ^privatnost/?$ /privatnost.html [L]
+  RewriteRule ^kolacici/?$ /kolacici.html [L]
+  RewriteRule ^plava-nafta$ /plava-nafta/ [R=301,L]
+</IfModule>
+
+# Never serve temp files the publisher writes before its atomic rename.
+<FilesMatch "\.tmp$">
+  Require all denied
+</FilesMatch>

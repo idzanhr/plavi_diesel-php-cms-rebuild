@@ -1,0 +1,19 @@
+User-agent: Googlebot
+Allow: /
+Disallow: /plava-nafta
+
+User-agent: Bingbot
+Allow: /
+Disallow: /plava-nafta
+
+User-agent: Twitterbot
+Allow: /
+Disallow: /plava-nafta
+
+User-agent: facebookexternalhit
+Allow: /
+Disallow: /plava-nafta
+
+User-agent: *
+Allow: /
+Disallow: /plava-nafta

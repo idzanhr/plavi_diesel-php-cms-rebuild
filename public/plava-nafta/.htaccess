@@ -1,0 +1,6 @@
+# Admin: PHP sends its own strict headers; only index.php, api.php and assets/ are reachable.
+Options -Indexes
+DirectoryIndex index.php
+<FilesMatch "^(?!(index|api)\.php$).*\.php$">
+  Require all denied
+</FilesMatch>

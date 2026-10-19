@@ -1,0 +1,905 @@
+[
+    {
+        "name": "Babina Greda",
+        "address": "Josipa Blažekovića 2\/a",
+        "phone": "091 497 1292",
+        "aliases": "",
+        "county": "Vukovarsko-srijemska županija"
+    },
+    {
+        "name": "Barban",
+        "address": "Barban 106\/D",
+        "phone": "091 497 1113",
+        "aliases": "",
+        "county": "Istarska županija"
+    },
+    {
+        "name": "Beli Manastir-Bele Bartoka",
+        "address": "Bele Bartoka 26",
+        "phone": "091 497 1082",
+        "aliases": "",
+        "county": "Osječko-baranjska županija"
+    },
+    {
+        "name": "Benkovac-Šopotska",
+        "address": "Šopotska 1a",
+        "phone": "091 497 1313",
+        "aliases": "",
+        "county": "Zadarska županija"
+    },
+    {
+        "name": "Biograd na moru-obala",
+        "address": "Obala kralja Petra Krešimira IV 36a",
+        "phone": "091 497 1315",
+        "aliases": "Biograd kod obale",
+        "county": "Zadarska županija"
+    },
+    {
+        "name": "Bjelovar-Markovac",
+        "address": "Đurđevačka cesta 146A",
+        "phone": "091 497 1008",
+        "aliases": "",
+        "county": "Bjelovarsko-bilogorska županija"
+    },
+    {
+        "name": "Bjelovar-motel",
+        "address": "Ul. Stjepana Radića 2\/a",
+        "phone": "091 497 0988",
+        "aliases": "Bjelovar Radićeva \/ Bjelovar obliaznica \/ Predavac",
+        "county": "Bjelovarsko-bilogorska županija"
+    },
+    {
+        "name": "Bošnjaci",
+        "address": "J. J. Strossmayera 53\/a",
+        "phone": "091 497 1294",
+        "aliases": "",
+        "county": "Vukovarsko-srijemska županija"
+    },
+    {
+        "name": "Božjakovina",
+        "address": "Zagrebačka ulica 2",
+        "phone": "091 497 1371",
+        "aliases": "Brckovljani \/ Lukarišće \/ Dugo Selo",
+        "county": "Zagrebačka županija"
+    },
+    {
+        "name": "Brinje",
+        "address": "Frankopanska 133",
+        "phone": "091 497 1050",
+        "aliases": "",
+        "county": "Ličko-senjska županija"
+    },
+    {
+        "name": "Buje",
+        "address": "Gospodarska 3",
+        "phone": "091 497 1114",
+        "aliases": "",
+        "county": "Istarska županija"
+    },
+    {
+        "name": "Čađavica",
+        "address": "Zagrebačka 12\/a",
+        "phone": "091 497 1013",
+        "aliases": "",
+        "county": "Virovitičko-podravska županija"
+    },
+    {
+        "name": "Čaglin",
+        "address": "Ulica kralja Tomislava 81",
+        "phone": "091 497 1206",
+        "aliases": "",
+        "county": "Požeško-slavonska županija"
+    },
+    {
+        "name": "Čakovec-obilaznica",
+        "address": "Ul. dr. Tome Bratkovića 1b",
+        "phone": "091 495 0565",
+        "aliases": "Čakovec nova bivši Adria Oil",
+        "county": "Međimurska županija"
+    },
+    {
+        "name": "Čazma",
+        "address": "Franje Vidovića 59",
+        "phone": "091 497 0989",
+        "aliases": "",
+        "county": "Bjelovarsko-bilogorska županija"
+    },
+    {
+        "name": "Čepin",
+        "address": "Kralja Zvonimira 1a",
+        "phone": "091 213 3002",
+        "aliases": "",
+        "county": "Osječko-baranjska županija"
+    },
+    {
+        "name": "Cres-grad",
+        "address": "Peškera 10",
+        "phone": "091 497 1142",
+        "aliases": "",
+        "county": "Primorsko-goranska županija"
+    },
+    {
+        "name": "Đakovo-Preradovićeva",
+        "address": "P. Preradovića 186",
+        "phone": "091 497 1090",
+        "aliases": "",
+        "county": "Osječko-baranjska županija"
+    },
+    {
+        "name": "Dalj",
+        "address": "Darija Dujmovića 17",
+        "phone": "091 497 1085",
+        "aliases": "",
+        "county": "Osječko-baranjska županija"
+    },
+    {
+        "name": "Darda",
+        "address": "Sv. Ivana Krstitelja 2e",
+        "phone": "091 497 1086",
+        "aliases": "",
+        "county": "Osječko-baranjska županija"
+    },
+    {
+        "name": "Daruvar",
+        "address": "Stjepana Radića 78",
+        "phone": "091 497 1014",
+        "aliases": "",
+        "county": "Bjelovarsko-bilogorska županija"
+    },
+    {
+        "name": "Đelekovec",
+        "address": "Mihovila P. Miškine 87",
+        "phone": "091 497 0990",
+        "aliases": "",
+        "county": "Koprivničko-križevačka županija"
+    },
+    {
+        "name": "Delnice",
+        "address": "Lujzinska cesta 4",
+        "phone": "091 497 1149",
+        "aliases": "",
+        "county": "Primorsko-goranska županija"
+    },
+    {
+        "name": "Donja Dubrava",
+        "address": "Koprivnička 2",
+        "phone": "091 497 1275",
+        "aliases": "",
+        "county": "Međimurska županija"
+    },
+    {
+        "name": "Donji Čaglić",
+        "address": "Ulica Roberta Žilija 4",
+        "phone": "091 497 1016",
+        "aliases": "",
+        "county": "Sisačko-moslavačka županija"
+    },
+    {
+        "name": "Donji Daruvar",
+        "address": "Bjelovarska 102",
+        "phone": "091 497 1017",
+        "aliases": "",
+        "county": "Bjelovarsko-bilogorska županija"
+    },
+    {
+        "name": "Donji Lapac",
+        "address": "Stojana Matića 29",
+        "phone": "091 497 1053",
+        "aliases": "",
+        "county": "Ličko-senjska županija"
+    },
+    {
+        "name": "Donji Miholjac-sjever",
+        "address": "Vukovarska 97\/a",
+        "phone": "091 497 1088",
+        "aliases": "",
+        "county": "Osječko-baranjska županija"
+    },
+    {
+        "name": "Drenovci",
+        "address": "Vladimira Nazora 1",
+        "phone": "091 497 1295",
+        "aliases": "",
+        "county": "Vukovarsko-srijemska županija"
+    },
+    {
+        "name": "Drniš",
+        "address": "Put Ivana Meštrovića 10",
+        "phone": "091 497 1259",
+        "aliases": "",
+        "county": "Šibensko-kninska županija"
+    },
+    {
+        "name": "Dubrovnik-Komolac-marina",
+        "address": "Komolac, Na Skali 5",
+        "phone": "091 497 1034",
+        "aliases": "Dubrovnik Komolac na obali",
+        "county": "Dubrovačko-neretvanska županija"
+    },
+    {
+        "name": "Đurđenovac",
+        "address": "Kolodvorska 15",
+        "phone": "091 213 3008",
+        "aliases": "",
+        "county": "Osječko-baranjska županija"
+    },
+    {
+        "name": "Đurđevac",
+        "address": "Stjepana Radića 110b",
+        "phone": "091 497 0991",
+        "aliases": "",
+        "county": "Koprivničko-križevačka županija"
+    },
+    {
+        "name": "Dvor",
+        "address": "Ulica Hrvatskog proljeća 6\/a",
+        "phone": "091 497 1182",
+        "aliases": "",
+        "county": "Sisačko-moslavačka županija"
+    },
+    {
+        "name": "Feričanci",
+        "address": "Trg Matije Gupca 10",
+        "phone": "091 497 1091",
+        "aliases": "",
+        "county": "Osječko-baranjska županija"
+    },
+    {
+        "name": "Garešnica",
+        "address": "Graničarska 2b",
+        "phone": "091 497 1018",
+        "aliases": "",
+        "county": "Bjelovarsko-bilogorska županija"
+    },
+    {
+        "name": "Goričan",
+        "address": "Komparija 6\/b",
+        "phone": "091 497 1276",
+        "aliases": "",
+        "county": "Međimurska županija"
+    },
+    {
+        "name": "Gospić-Budačka",
+        "address": "Budačka 76",
+        "phone": "091 497 1055",
+        "aliases": "",
+        "county": "Ličko-senjska županija"
+    },
+    {
+        "name": "Gračac",
+        "address": "Zagrebačka ul. 15",
+        "phone": "091 497 1056",
+        "aliases": "",
+        "county": "Zadarska županija"
+    },
+    {
+        "name": "Gunja",
+        "address": "Vladimira Nazora 341",
+        "phone": "091 497 1296",
+        "aliases": "",
+        "county": "Vukovarsko-srijemska županija"
+    },
+    {
+        "name": "Gvozd",
+        "address": "Karlovačka 52",
+        "phone": "091 497 1185",
+        "aliases": "Vrginmost",
+        "county": "Sisačko-moslavačka županija"
+    },
+    {
+        "name": "Hvar",
+        "address": "Janka Zazjala 16",
+        "phone": "091 497 1226",
+        "aliases": "",
+        "county": "Splitsko-dalmatinska županija"
+    },
+    {
+        "name": "Imotski-Bleiburška",
+        "address": "Blajburška ulica 4",
+        "phone": "091 497 1227",
+        "aliases": "",
+        "county": "Splitsko-dalmatinska županija"
+    },
+    {
+        "name": "Ivankovo",
+        "address": "Gorjani 7",
+        "phone": "091 497 1297",
+        "aliases": "",
+        "county": "Vukovarsko-srijemska županija"
+    },
+    {
+        "name": "Ivanska",
+        "address": "Ivana Mažuranića 50",
+        "phone": "091 497 0992",
+        "aliases": "",
+        "county": "Bjelovarsko-bilogorska županija"
+    },
+    {
+        "name": "Jastrebarsko",
+        "address": "Dr. Franje Tuđmana 110",
+        "phone": "091 497 1379",
+        "aliases": "",
+        "county": "Zagrebačka županija"
+    },
+    {
+        "name": "Josipovac",
+        "address": "Jarak 4",
+        "phone": "091 213 3005",
+        "aliases": "",
+        "county": "Osječko-baranjska županija"
+    },
+    {
+        "name": "Kalinovac",
+        "address": "Kolodvorska 159",
+        "phone": "091 497 0994",
+        "aliases": "",
+        "county": "Koprivničko-križevačka županija"
+    },
+    {
+        "name": "Karlovac-Ilovac",
+        "address": "Zagrebačka 17\/a",
+        "phone": "091 497 1069",
+        "aliases": "",
+        "county": "Karlovačka županija"
+    },
+    {
+        "name": "Kloštar Ivanić",
+        "address": "Ulica Kralja Tomislava 18",
+        "phone": "091 497 1383",
+        "aliases": "Kloštar \/ Ivanić",
+        "county": "Zagrebačka županija"
+    },
+    {
+        "name": "Kneževi Vinogradi",
+        "address": "Glavna 4",
+        "phone": "091 497 1092",
+        "aliases": "",
+        "county": "Osječko-baranjska županija"
+    },
+    {
+        "name": "Koška",
+        "address": "Matije Gupca 2",
+        "phone": "091 497 1093",
+        "aliases": "",
+        "county": "Osječko-baranjska županija"
+    },
+    {
+        "name": "Križevci-Tomislavova",
+        "address": "Tomislavova 130",
+        "phone": "091 497 1001",
+        "aliases": "",
+        "county": "Koprivničko-križevačka županija"
+    },
+    {
+        "name": "Krk-obala",
+        "address": "Šetalište Svetog Bernardina 8",
+        "phone": "091 497 1154",
+        "aliases": "",
+        "county": "Primorsko-goranska županija"
+    },
+    {
+        "name": "Kutina-Krešimirova",
+        "address": "Ulica Kralja Petra Krešimira IV 22",
+        "phone": "091 497 1188",
+        "aliases": "Kutina samo",
+        "county": "Sisačko-moslavačka županija"
+    },
+    {
+        "name": "Kutjevo",
+        "address": "Republike Hrvatske 1\/a",
+        "phone": "091 497 1207",
+        "aliases": "",
+        "county": "Požeško-slavonska županija"
+    },
+    {
+        "name": "Lastovo",
+        "address": "Obala Lastovskih ribara 5",
+        "phone": "091 497 1039",
+        "aliases": "",
+        "county": "Dubrovačko-neretvanska županija"
+    },
+    {
+        "name": "Lepoglava",
+        "address": "Trakošćanska 5",
+        "phone": "091 497 1278",
+        "aliases": "",
+        "county": "Varaždinska županija"
+    },
+    {
+        "name": "Ludbreg",
+        "address": "Ulica Mihovila Pavleka Miškine 2",
+        "phone": "091 497 1279",
+        "aliases": "",
+        "county": "Varaždinska županija"
+    },
+    {
+        "name": "Magadenovac",
+        "address": "Glavna 2",
+        "phone": "091 497 1094",
+        "aliases": "",
+        "county": "Osječko-baranjska županija"
+    },
+    {
+        "name": "Makarska-obala",
+        "address": "Obala kralja Tomislava 22",
+        "phone": "091 497 1235",
+        "aliases": "",
+        "county": "Splitsko-dalmatinska županija"
+    },
+    {
+        "name": "Mali Lošinj-obala",
+        "address": "Priko 63\/a",
+        "phone": "091 497 1157",
+        "aliases": "",
+        "county": "Primorsko-goranska županija"
+    },
+    {
+        "name": "Marija Bistrica",
+        "address": "Nova cesta 19",
+        "phone": "091 497 1393",
+        "aliases": "",
+        "county": "Krapinsko-zagorska županija"
+    },
+    {
+        "name": "Markušica",
+        "address": "Pere Cara 43\/a",
+        "phone": "091 497 1298",
+        "aliases": "",
+        "county": "Vukovarsko-srijemska županija"
+    },
+    {
+        "name": "Mikleuš",
+        "address": "Nikole Šubića Zrinskog 59",
+        "phone": "091 497 1021",
+        "aliases": "",
+        "county": "Virovitičko-podravska županija"
+    },
+    {
+        "name": "Mikluševci",
+        "address": "Trg žrtava domovinskog rata 1",
+        "phone": "091 497 1299",
+        "aliases": "",
+        "county": "Vukovarsko-srijemska županija"
+    },
+    {
+        "name": "Milna-marina",
+        "address": "Brdo II 46",
+        "phone": "091 497 1237",
+        "aliases": "",
+        "county": "Splitsko-dalmatinska županija"
+    },
+    {
+        "name": "Motovun",
+        "address": "Kanal 46",
+        "phone": "091 497 1120",
+        "aliases": "",
+        "county": "Istarska županija"
+    },
+    {
+        "name": "Mursko Središće",
+        "address": "Ulica Josipa Broza-Tita 92",
+        "phone": "091 497 1280",
+        "aliases": "",
+        "county": "Međimurska županija"
+    },
+    {
+        "name": "Murter",
+        "address": "Put Gradine 3\/a",
+        "phone": "091 497 1263 ; 091 497 1474",
+        "aliases": "",
+        "county": "Šibensko-kninska županija"
+    },
+    {
+        "name": "Nijemci",
+        "address": "Trg kralja Tomislava 17",
+        "phone": "091 497 1300",
+        "aliases": "",
+        "county": "Vukovarsko-srijemska županija"
+    },
+    {
+        "name": "Nova Gradiška-Relkovićeva",
+        "address": "Matije Antuna Relkovića 13\/a",
+        "phone": "091 497 1211",
+        "aliases": "Gradiška",
+        "county": "Brodsko-posavska županija"
+    },
+    {
+        "name": "Nova Rača",
+        "address": "Sajmišna ulica 2\/a",
+        "phone": "091 497 1003",
+        "aliases": "",
+        "county": "Bjelovarsko-bilogorska županija"
+    },
+    {
+        "name": "Novigrad Podravski",
+        "address": "Trg Matije Gupca 5\/a",
+        "phone": "091 497 1004",
+        "aliases": "Novigrad",
+        "county": "Koprivničko-križevačka županija"
+    },
+    {
+        "name": "Novska-grad",
+        "address": "Ulica kralja Tomislava 42\/a",
+        "phone": "091 497 1195",
+        "aliases": "",
+        "county": "Sisačko-moslavačka županija"
+    },
+    {
+        "name": "Okučani",
+        "address": "Ante Starčevića 57",
+        "phone": "091 497 1212",
+        "aliases": "",
+        "county": "Brodsko-posavska županija"
+    },
+    {
+        "name": "Opatija-Lido",
+        "address": "Zert 6",
+        "phone": "091 497 1161",
+        "aliases": "",
+        "county": "Primorsko-goranska županija"
+    },
+    {
+        "name": "Opuzen",
+        "address": "Jasenska 6",
+        "phone": "091 497 1043",
+        "aliases": "",
+        "county": "Dubrovačko-neretvanska županija"
+    },
+    {
+        "name": "Orahovica",
+        "address": "Dalmatinska 45",
+        "phone": "091 213 3004",
+        "aliases": "",
+        "county": "Virovitičko-podravska županija"
+    },
+    {
+        "name": "Oriovac",
+        "address": "Frankopanska 9\/a",
+        "phone": "091 497 1213",
+        "aliases": "",
+        "county": "Brodsko-posavska županija"
+    },
+    {
+        "name": "Osijek-Svačićeva",
+        "address": "Svačićeva 65",
+        "phone": "091 213 3045",
+        "aliases": "",
+        "county": "Osječko-baranjska županija"
+    },
+    {
+        "name": "Otok",
+        "address": "Bana Jelačića 102",
+        "phone": "091 497 1301",
+        "aliases": "",
+        "county": "Vukovarsko-srijemska županija"
+    },
+    {
+        "name": "Pitomača",
+        "address": "Ljudevita Gaja 134",
+        "phone": "091 497 1005",
+        "aliases": "",
+        "county": "Virovitičko-podravska županija"
+    },
+    {
+        "name": "Plaški",
+        "address": "Plitvička cesta 22",
+        "phone": "091 497 1074",
+        "aliases": "",
+        "county": "Karlovačka županija"
+    },
+    {
+        "name": "Pleternica",
+        "address": "Mlinska 18",
+        "phone": "091 497 1214",
+        "aliases": "",
+        "county": "Požeško-slavonska županija"
+    },
+    {
+        "name": "Plitvice-Čatrnja",
+        "address": "Čatrnja 172\/1",
+        "phone": "091 497 1075",
+        "aliases": "",
+        "county": "Ličko-senjska županija"
+    },
+    {
+        "name": "Podgorač",
+        "address": "Hinka Juhna 20",
+        "phone": "091 497 1107",
+        "aliases": "",
+        "county": "Osječko-baranjska županija"
+    },
+    {
+        "name": "Poljana",
+        "address": "Ulica Ljudevita Gaja 13\/a",
+        "phone": "091 497 1023",
+        "aliases": "",
+        "county": "Sisačko-moslavačka županija"
+    },
+    {
+        "name": "Požega-Zagrebačka",
+        "address": "Zagrebačka 181",
+        "phone": "091 497 1216",
+        "aliases": "",
+        "county": "Požeško-slavonska županija"
+    },
+    {
+        "name": "Preko",
+        "address": "Artić 4",
+        "phone": "091 497 1321",
+        "aliases": "",
+        "county": "Zadarska županija"
+    },
+    {
+        "name": "Pula-obala",
+        "address": "Riva 3",
+        "phone": "091 497 1126",
+        "aliases": "",
+        "county": "Istarska županija"
+    },
+    {
+        "name": "Rovinj-obala",
+        "address": "Obala palih boraca NOR 2",
+        "phone": "091 497 1135",
+        "aliases": "",
+        "county": "Istarska županija"
+    },
+    {
+        "name": "Šibenik-obala",
+        "address": "Obala Franje Tuđmana 1\/a",
+        "phone": "091 497 1269",
+        "aliases": "Šibenik na moru",
+        "county": "Šibensko-kninska županija"
+    },
+    {
+        "name": "Sisak-Zagrebačka",
+        "address": "Zagrebačka cesta 44",
+        "phone": "091 497 1202",
+        "aliases": "",
+        "county": "Sisačko-moslavačka županija"
+    },
+    {
+        "name": "Slavonski Brod-Osječka",
+        "address": "Osječka ulica 278\/h",
+        "phone": "091 497 1217",
+        "aliases": "",
+        "county": "Brodsko-posavska županija"
+    },
+    {
+        "name": "Split-Kopilica-sjever",
+        "address": "Hercegovačka 21",
+        "phone": "091 497 1244",
+        "aliases": "",
+        "county": "Splitsko-dalmatinska županija"
+    },
+    {
+        "name": "Split-obala",
+        "address": "Obala kneza Branimira 7",
+        "phone": "091 497 1245",
+        "aliases": "Split na moru \/ Zapadna obala Split",
+        "county": "Splitsko-dalmatinska županija"
+    },
+    {
+        "name": "Suhopolje",
+        "address": "Vukovarska 8",
+        "phone": "091 497 1006",
+        "aliases": "",
+        "county": "Virovitičko-podravska županija"
+    },
+    {
+        "name": "Sunja",
+        "address": "Ulica branitelja Sunje 12",
+        "phone": "091 497 1203",
+        "aliases": "",
+        "county": "Sisačko-moslavačka županija"
+    },
+    {
+        "name": "Sveti Ivan Žabno",
+        "address": "Ulica braće Radića 2",
+        "phone": "091 497 1007",
+        "aliases": "",
+        "county": "Zagrebačka županija"
+    },
+    {
+        "name": "Tovarnik",
+        "address": "Bana Jelačića 3",
+        "phone": "091 497 1303",
+        "aliases": "",
+        "county": "Vukovarsko-srijemska županija"
+    },
+    {
+        "name": "Udbina",
+        "address": "Pod vrbom 5",
+        "phone": "091 497 1060",
+        "aliases": "",
+        "county": "Ličko-senjska županija"
+    },
+    {
+        "name": "Umag-obala",
+        "address": "Šetalište V. Gortana 5\/a",
+        "phone": "091 497 1138",
+        "aliases": "",
+        "county": "Istarska županija"
+    },
+    {
+        "name": "Valpovo-I. L. Ribara",
+        "address": "Ive Lole Ribara 61",
+        "phone": "091 497 1109",
+        "aliases": "",
+        "county": "Osječko-baranjska županija"
+    },
+    {
+        "name": "Vela Luka",
+        "address": "Obala 3 20\/a",
+        "phone": "091 497 1049",
+        "aliases": "",
+        "county": "Dubrovačko-neretvanska županija"
+    },
+    {
+        "name": "Velika",
+        "address": "Trg Bana Josipa Jelačića 36\/a",
+        "phone": "091 497 1223",
+        "aliases": "",
+        "county": "Požeško-slavonska županija"
+    },
+    {
+        "name": "Velika Mlaka-jug",
+        "address": "Zagrebačka cesta 25",
+        "phone": "091 497 1403",
+        "aliases": "Velika Mlaka (samo to)",
+        "county": "Zagrebačka županija"
+    },
+    {
+        "name": "Veliki Grđevac",
+        "address": "Trg Mate Lovraka 13",
+        "phone": "091 497 1027",
+        "aliases": "Grđevac",
+        "county": "Bjelovarsko-bilogorska županija"
+    },
+    {
+        "name": "Veliki Zdenci",
+        "address": "Trg kralja Tomislava 2",
+        "phone": "091 497 1028",
+        "aliases": "",
+        "county": "Bjelovarsko-bilogorska županija"
+    },
+    {
+        "name": "Vidovec",
+        "address": "Ulica Stjepana Radića 7",
+        "phone": "091 497 1290",
+        "aliases": "",
+        "county": "Varaždinska županija"
+    },
+    {
+        "name": "Vinkovci-Genscherova",
+        "address": "Genscherova 24",
+        "phone": "091 497 1305",
+        "aliases": "",
+        "county": "Vukovarsko-srijemska županija"
+    },
+    {
+        "name": "Virovitica-Strossmayerova",
+        "address": "Ulica Josipa Jurja Strossmayera 246",
+        "phone": "091 497 1012",
+        "aliases": "Virovita ka izlazu iz grada",
+        "county": "Virovitičko-podravska županija"
+    },
+    {
+        "name": "Vis",
+        "address": "Šetalište stare Isse 24",
+        "phone": "091 497 1255",
+        "aliases": "",
+        "county": "Splitsko-dalmatinska županija"
+    },
+    {
+        "name": "Vodice-marina",
+        "address": "Artina 13A",
+        "phone": "091 497 1478",
+        "aliases": "",
+        "county": "Šibensko-kninska županija"
+    },
+    {
+        "name": "Vodnjan",
+        "address": "Ulica 1. maja 51",
+        "phone": "091 497 1139",
+        "aliases": "",
+        "county": "Istarska županija"
+    },
+    {
+        "name": "Vojnić",
+        "address": "Karlovačka 8a",
+        "phone": "091 497 1079",
+        "aliases": "",
+        "county": "Karlovačka županija"
+    },
+    {
+        "name": "Vozilići",
+        "address": "Vozilići 35 A",
+        "phone": "091 497 1140",
+        "aliases": "",
+        "county": "Istarska županija"
+    },
+    {
+        "name": "Vratno",
+        "address": "Varaždinska ulica 71",
+        "phone": "091 497 1291",
+        "aliases": "",
+        "county": "Varaždinska županija"
+    },
+    {
+        "name": "Vrboska-marina",
+        "address": "Vrboska 515",
+        "phone": "091 497 1472",
+        "aliases": "",
+        "county": "Splitsko-dalmatinska županija"
+    },
+    {
+        "name": "Vrbovec",
+        "address": "Zagrebačka 2",
+        "phone": "091 497 1405",
+        "aliases": "",
+        "county": "Zagrebačka županija"
+    },
+    {
+        "name": "Vrbovec-Dubrava",
+        "address": "Radnička ulica 4",
+        "phone": "091 497 1406",
+        "aliases": "",
+        "county": "Zagrebačka županija"
+    },
+    {
+        "name": "Vrhovine",
+        "address": "Senjska 70",
+        "phone": "091 497 1061",
+        "aliases": "",
+        "county": "Ličko-senjska županija"
+    },
+    {
+        "name": "Vrlika",
+        "address": "Jadranska cesta 15",
+        "phone": "091 497 1257",
+        "aliases": "",
+        "county": "Splitsko-dalmatinska županija"
+    },
+    {
+        "name": "Vukovar-Kudeljarska",
+        "address": "Kudeljarska 3",
+        "phone": "091 213 3009",
+        "aliases": "",
+        "county": "Vukovarsko-srijemska županija"
+    },
+    {
+        "name": "Vukovar-Mitnica",
+        "address": "Bana Josipa Jelačića 73",
+        "phone": "091 497 1308",
+        "aliases": "",
+        "county": "Vukovarsko-srijemska županija"
+    },
+    {
+        "name": "Zabok-Matije Gupca",
+        "address": "Ulica Matije Gupca 1\/a",
+        "phone": "091 497 1407",
+        "aliases": "",
+        "county": "Krapinsko-zagorska županija"
+    },
+    {
+        "name": "Zadar I-istok",
+        "address": "Islam Latinski 2b",
+        "phone": "091 497 0558",
+        "aliases": "Posedarje \/ Brala",
+        "county": "Zadarska županija"
+    },
+    {
+        "name": "Zadar-Voštarnica",
+        "address": "Obala kneza Branimira 20a",
+        "phone": "091 497 1329",
+        "aliases": "",
+        "county": "Zadarska županija"
+    },
+    {
+        "name": "Županja-Braće Radić",
+        "address": "Braće Radić 2\/a",
+        "phone": "091 497 1310",
+        "aliases": "",
+        "county": "Vukovarsko-srijemska županija"
+    }
+]
