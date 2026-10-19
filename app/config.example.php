@@ -47,6 +47,16 @@ return [
     // hand are never changed. false = only flag it in the editor.
     'ina_auto_close' => true,
 
-    // Set to true only behind a reverse proxy/CDN you control that sets X-Forwarded-For.
+    // Bunny CDN (optional). With an API key, every save clears Bunny's cache for the site,
+    // so visitors never get an old copy. Bunny panel → Account → API → "API Key"
+    // (account key); pullzone_id = the number in the pull zone's URL, used by bin/bunny-purge.php --zone.
+    'bunny' => [
+        'api_key'     => '',
+        'pullzone_id' => '',
+        'site_url'    => 'https://plava-nafta.crodesign93.eu',
+    ],
+
+    // Keep false with Bunny: nginx already puts the real visitor IP in REMOTE_ADDR (see the
+    // BUNNY block in deploy/cloudpanel-vhost.conf). true only for a proxy that is NOT set up that way.
     'trust_proxy' => false,
 ];

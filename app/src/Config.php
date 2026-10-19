@@ -19,6 +19,7 @@ final class Config
         'lockout_redirect' => '',
         'trust_proxy' => false,
         'ina_auto_close' => true,
+        'bunny' => ['api_key' => '', 'pullzone_id' => '', 'site_url' => ''],
     ];
 
     public static function load(array $values): void

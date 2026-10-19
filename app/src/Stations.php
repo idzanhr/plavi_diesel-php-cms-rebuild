@@ -280,6 +280,7 @@ final class Stations
         foreach (['privatnost', 'kolacici', '404'] as $page) {
             self::atomicWrite("$dir/$page.html", Render::page((string) file_get_contents("$templates/$page.html"), $dir), true);
         }
+        Bunny::purgeAfterPublish(); // no-op unless a Bunny API key is configured
     }
 
     private static function writeGzip(string $path, string $content): void

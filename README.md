@@ -109,7 +109,8 @@ Until you paste this vhost, CloudPanel's **default** one serves every file in th
 paste it before you leave anything else in there. Secrets stay safe even then: `app/config.php` only *returns* an
 array (it prints nothing), and every script in `bin/` and `tests/` exits unless run from the command line.
 
-**Behind Cloudflare?** CloudPanel already restores the real visitor IP for nginx, so keep `'trust_proxy' => false`.
+**Behind Bunny CDN?** See *Bunny CDN step by step* below (cache settings, purging the old site, real visitor IPs).
+Keep `'trust_proxy' => false`; nginx restores the real IP.
 
 ### What the vhost does for speed (measured locally on nginx + HTTP/2, simulated slow 4G, mobile)
 
@@ -128,6 +129,68 @@ array (it prints nothing), and every script in `bin/` and `tests/` exits unless 
 * Security: strict CSP, HSTS, `X-Frame-Options`, whitelist routing (above), and POSTs to the admin are rate-limited
   per IP by nginx (on top of the app's own lockout).
 * Deliberately **no** `open_file_cache`: it would keep serving the previous page for up to a minute after an edit.
+
+## Bunny CDN step by step
+
+The domain runs through Bunny (CDN + DNS). Bunny keeps its own copy of every page; that is why the **old Lovable
+site can still show** after the new one is deployed. Do these steps once, in this order. (Setting names follow the
+Bunny dashboard; if one is worded slightly differently in yours, look for the same meaning.)
+
+**1. Deploy the new site first** (section *Deploy on CloudPanel* above), with the vhost pasted as it is – the BUNNY
+block stays commented out for now.
+
+**2. Pull zone → General → Origin**
+* *Origin URL*: `https://128.140.51.168` (the Hetzner server's IP; not the domain, that would loop through Bunny).
+* *Forward Host Header*: **ON** – nginx only answers for `plava-nafta.crodesign93.eu`.
+
+**3. Pull zone → Caching → General**
+* *Cache Expiration Time*: **Respect Origin Cache-Control**. The site already says what may be cached: pages and
+  `stations.json` are `no-cache` (always checked, a cheap 304), CSS/JS are cached for a year (their URLs change on
+  every edit), admin is `no-store`.
+* *Browser Cache Expiration Time*: **Match Server Cache Expiration**.
+* *Query String*: **do not ignore** query strings (`site.css?v=5b039b30a9` must be a different file than `?v=…` of
+  the previous version). If there is a "Vary cache by query string" option, it must be **on**.
+* *Disable Cookies*: **OFF** – otherwise Bunny strips the admin's session cookie and login loops back to
+  "Sigurnosni token je istekao".
+* *Perma-Cache*: **off**. *Optimizer* (if you have it): **off** – it rewrites HTML/CSS/JS, which the strict
+  Content-Security-Policy would block.
+
+**4. Edge Rules → Add edge rule "Admin – never cache"**
+* Condition: *Request URL* – *Match any* – `*/plava-nafta*`
+* Actions: *Override Cache Time* = `0` and *Override Browser Cache Time* = `0` (or *Bypass Cache*, if offered).
+
+**5. Edge Rules → Add edge rule "Origin secret"** (lets the server recognise Bunny)
+* Make a secret on the server: `openssl rand -hex 24` → e.g. `9f2c…` (keep it, you need it in step 7).
+* Condition: *Request URL* – *Match any* – `*`
+* Action: *Set Request Header* – name `X-PlavaNafta-Origin`, value = the secret.
+
+**6. Clear the old cache** – this is what removes the old Lovable pages:
+* Pull zone → **Purge Cache** → *Purge All*.
+* In your browser: **Ctrl + F5** (Mac: **Cmd + Shift + R**) once, so it drops its own old copy too.
+* Check: `curl -sI https://plava-nafta.crodesign93.eu/ | grep -iE 'cache-control|content-security'` must show
+  `cache-control: no-cache` and a `content-security-policy` line – those come only from the new site.
+
+**7. Lock the server to Bunny** (real visitor IPs for the admin lockout):
+* CloudPanel → Site → **Vhost**: remove the `#` in front of the three `map` blocks at the top and the five lines of
+  the **BUNNY CDN** block in the server, replace both `CHANGE-ME` with the secret from step 5, save.
+* Check from the server (must be **403**, direct access is refused):
+  `curl -skI https://127.0.0.1/ -H 'Host: plava-nafta.crodesign93.eu' | head -1`
+* Check the site in the browser (must work) and log in to `/plava-nafta/`; after a save, **Dnevnik** shows *your*
+  IP address, not a Bunny one.
+* Something wrong? Put the `#` back and save – the site works as before.
+
+**8. Automatic purge on every save** (optional, recommended): Bunny → *Account* → *API* → copy the **API key**
+(account key, not a pull-zone password), then in `app/config.php`:
+```php
+'bunny' => ['api_key' => '…', 'pullzone_id' => '123456', 'site_url' => 'https://plava-nafta.crodesign93.eu'],
+```
+(`pullzone_id` = the number in the pull zone's address in the Bunny dashboard.) From then on every save in the CMS,
+every ina.hr sync and every `bin/publish.php` clears Bunny's copy of the site. A failed purge never blocks a save;
+it is written to the Dnevnik. After a deploy you can also run `php8.3 bin/bunny-purge.php` (or `--zone` for the
+whole pull zone).
+
+**Let's Encrypt keeps working**: `/.well-known/acme-challenge/` is let through without the secret, so CloudPanel can
+renew the origin certificate.
 
 ## Temporarily closed stations ("Privremeno zatvoreno")
 
@@ -217,6 +280,7 @@ built from the name, tried directly. In the editor, **Dohvati s ina.hr** does th
 | `php bin/set-admin.php [--email=…] [--temporary]` | change admin e-mail/password (logs out all sessions) |
 | `php bin/reset-2fa.php [--print]` | lost phone *and* recovery codes: remove 2FA (or set a new secret and print it) |
 | `php bin/upgrade.php` | after `git pull`: new database columns + re-publish |
+| `php bin/bunny-purge.php [--zone]` | clear Bunny's cache now (needs the `bunny` API key in config) |
 | `php bin/publish.php` | regenerate all public files (nightly cron, or after editing a template) |
 
 ## Migrating the live data from Supabase

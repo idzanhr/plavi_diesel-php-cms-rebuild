@@ -351,5 +351,36 @@ test('nothing found: the log says what was tried, saved hours stay', function ()
     eq($before, Db::one("SELECT working_hours FROM stations WHERE name = 'Murter'")['working_hours']);
 });
 
+echo "Bunny CDN purge\n";
+test('no API key: nothing is sent', function () {
+    $calls = 0;
+    PlavaNafta\Bunny::$http = function () use (&$calls) { $calls++; return 200; };
+    Stations::publish();
+    eq(0, $calls);
+    eq(null, PlavaNafta\Bunny::purge());
+});
+test('with a key: every publish purges https://domain/* with the AccessKey header', function () {
+    PlavaNafta\Config::load(['bunny' => ['api_key' => 'k-123', 'pullzone_id' => '42', 'site_url' => 'https://plava-nafta.crodesign93.eu/']] + require __DIR__ . '/config.test.php');
+    $calls = [];
+    PlavaNafta\Bunny::$http = function (string $url, array $headers) use (&$calls) { $calls[] = [$url, $headers]; return 204; };
+    Stations::publish();
+    eq(1, count($calls));
+    eq('https://api.bunny.net/purge?url=https%3A%2F%2Fplava-nafta.crodesign93.eu%2F%2A&async=false', $calls[0][0]);
+    eq(true, in_array('AccessKey: k-123', $calls[0][1], true));
+    eq(null, PlavaNafta\Bunny::purge(true));
+    eq('https://api.bunny.net/pullzone/42/purgeCache', $calls[1][0]); // --zone
+});
+test('a failing purge never blocks a save; it is written to the Dnevnik', function () {
+    PlavaNafta\Bunny::$http = fn() => 401;
+    $id = (int) Db::one("SELECT id FROM stations WHERE name = 'Murter'")['id'];
+    Stations::save($id, ['aliases' => 'Murter centar'] + Stations::find($id));
+    Stations::publish();
+    eq('Murter centar', Stations::find($id)['aliases']);
+    eq('bunny-purge', Db::one("SELECT action FROM audit_log ORDER BY id DESC LIMIT 1")['action']);
+    PlavaNafta\Bunny::$http = fn() => throw new RuntimeException('api.bunny.net nije dostupan');
+    Stations::publish(); // still fine
+    PlavaNafta\Config::load(require __DIR__ . '/config.test.php');
+});
+
 echo "\n$count tests, $failures failed\n";
 exit($failures ? 1 : 0);
