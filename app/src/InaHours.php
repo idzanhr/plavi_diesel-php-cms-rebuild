@@ -185,7 +185,7 @@ final class InaHours
      */
     public static function sync(?int $minute, ?string $only = null, ?callable $log = null): array
     {
-        $rows = Db::all('SELECT id, name, phone, ina_url, working_hours, ina_notice, status, status_source, blue_price FROM stations ORDER BY id');
+        $rows = Db::all('SELECT id, name, phone, ina_url, working_hours, ina_notice, status, status_source, blue_price, blue_price_name FROM stations ORDER BY id');
         if ($only !== null) {
             $rows = array_values(array_filter($rows, fn($r) => mb_strtolower($r['name']) === mb_strtolower(trim($only)) || (string) $r['id'] === $only));
         }
@@ -227,11 +227,18 @@ final class InaHours
         // 0. Blue diesel price ("Goriva u ponudi"). Stored with the time it was picked up; a page
         //    without a price leaves the last known one (its date then shows how old it is).
         if ($price = self::bluePrice($html)) {
+            $old = (string) $station['blue_price'];
+            if ($old !== '' && $price['price'] !== $old) {
+                // A new price (weekly government / company change): keep the old one and the date,
+                // so the site can say "nova cijena od …, prije …" and the Dnevnik has the history.
+                Db::exec('UPDATE stations SET blue_price_prev = ?, blue_price_changed_at = ? WHERE id = ?', [$old, Db::now(), $station['id']]);
+                Audit::log('price', $station['name'], str_replace('.', ',', "$old € → {$price['price']} €") . " ({$price['name']})");
+            }
             Db::exec('UPDATE stations SET blue_price = ?, blue_price_name = ?, blue_price_at = ? WHERE id = ?',
                 [$price['price'], mb_substr($price['name'], 0, 80), Db::now(), $station['id']]);
             $result['prices']++;
-            if ($price['price'] !== (string) $station['blue_price']) {
-                $log("{$station['name']}: {$price['name']} " . str_replace('.', ',', $price['price']) . ' €');
+            if ($price['price'] !== $old) {
+                $log("{$station['name']}: {$price['name']} " . ($old !== '' ? str_replace('.', ',', $old) . ' € → ' : '') . str_replace('.', ',', $price['price']) . ' €');
             }
         }
 

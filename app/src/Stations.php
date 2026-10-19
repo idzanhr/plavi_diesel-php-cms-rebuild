@@ -254,6 +254,7 @@ final class Stations
             'county' => $s['county'], 'phone' => $s['phone'], 'aliases' => $s['aliases'],
             'ina_url' => InaHours::safeUrl($s['ina_url']) ?? '', 'working_hours' => $s['working_hours'],
             'blue_price' => $s['blue_price'] ?? '', 'blue_price_name' => $s['blue_price_name'] ?? '', 'blue_price_at' => $s['blue_price_at'] ?? '',
+            'blue_price_prev' => $s['blue_price_prev'] ?? '', 'blue_price_changed_at' => $s['blue_price_changed_at'] ?? '',
             'status' => $s['status'], 'status_note' => $s['status_note'],
             'closed_from' => $s['closed_from'], 'closed_until' => $s['closed_until'],
         ], self::all());
@@ -277,7 +278,7 @@ final class Stations
         }
         self::atomicWrite("$dir/data/stations.json", json_encode(['generated_at' => $generatedAt, 'stations' => $rows], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n", true);
         $index = Render::page((string) file_get_contents("$templates/index.html"), $dir);
-        self::atomicWrite("$dir/index.html", Render::index($index, $rows, $generatedAt), true);
+        self::atomicWrite("$dir/index.html", Render::index($index, $rows, $generatedAt, Settings::get('price_announcement')), true);
         foreach (['privatnost', 'kolacici', '404'] as $page) {
             self::atomicWrite("$dir/$page.html", Render::page((string) file_get_contents("$templates/$page.html"), $dir), true);
         }

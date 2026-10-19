@@ -68,6 +68,8 @@ final class Db
             'blue_price'    => "VARCHAR(16) NOT NULL DEFAULT ''",      // blue diesel €/l from ina.hr, e.g. 1.43
             'blue_price_name' => "VARCHAR(80) NOT NULL DEFAULT ''",    // the name INA uses, e.g. Eurodiesel plavi
             'blue_price_at' => "VARCHAR(19) NOT NULL DEFAULT ''",      // when it was picked up (Y-m-d H:i:s)
+            'blue_price_prev' => "VARCHAR(16) NOT NULL DEFAULT ''",    // the price before the last change
+            'blue_price_changed_at' => "VARCHAR(19) NOT NULL DEFAULT ''", // when the sync first saw the new price
         ],
     ];
 

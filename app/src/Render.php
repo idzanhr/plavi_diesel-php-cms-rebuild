@@ -32,7 +32,7 @@ final class Render
         return strtr($template, ['{{HEAD_ASSETS}}' => self::headAssets($webRoot)]);
     }
 
-    public static function index(string $template, array $rows, string $generatedAt): string
+    public static function index(string $template, array $rows, string $generatedAt, ?array $announcement = null): string
     {
         $counts = [];
         foreach ($rows as $s) if ($s['county'] !== '') $counts[$s['county']] = ($counts[$s['county']] ?? 0) + 1;
@@ -52,7 +52,7 @@ final class Render
 
         return strtr($template, [
             '{{SUMMARY}}' => $summary,
-            '{{PRICE_BANNER}}' => self::priceBanner($rows),
+            '{{PRICE_BANNER}}' => self::priceBanner($rows, date('Y-m-d H:i:s', strtotime($generatedAt)), $announcement),
             '{{CARDS}}' => implode("\n", array_map(fn($s) => self::card($s, $today), $rows)),
             '{{TOTAL}}' => (string) count($rows),
             '{{COUNTY_OPTIONS}}' => $options,
@@ -67,28 +67,91 @@ final class Render
         return number_format((float) $price, 2, ',', '.') . ' €';
     }
 
-    /**
-     * Banner at the top: the blue diesel price picked up from ina.hr, with the date. One price when
-     * all stations agree, otherwise the range. Names vary by station, so all variants are listed.
-     */
-    public static function priceBanner(array $rows): string
+    public const NEW_PRICE_DAYS = 7;
+
+    /** Most common value (ties: the lower price). */
+    private static function mode(array $values): string
     {
-        $priced = array_filter($rows, fn($s) => ($s['blue_price'] ?? '') !== '');
-        if (!$priced) return '';
-        $prices = array_map(fn($s) => (float) $s['blue_price'], $priced);
-        $min = min($prices); $max = max($prices);
-        $latest = max(array_column($priced, 'blue_price_at'));
-        // Each price stays on one line together with its unit (no "/ l" alone on a phone).
+        $counts = array_count_values($values);
+        uksort($counts, fn($a, $b) => $counts[$b] <=> $counts[$a] ?: (float) $a <=> (float) $b);
+        return (string) array_key_first($counts);
+    }
+
+    /** "−0,04 €" / "+0,04 €" */
+    private static function diff(float $d): string
+    {
+        return ($d < 0 ? '−' : '+') . number_format(abs($d), 2, ',', '.') . ' €';
+    }
+
+    private static function dayName(string $ymd): string
+    {
+        return ['ned', 'pon', 'uto', 'sri', 'čet', 'pet', 'sub'][(int) date('w', strtotime($ymd))];
+    }
+
+    /**
+     * Banner at the top: the blue diesel price picked up from ina.hr, with the date; one price when
+     * all stations agree, otherwise the range. For a week after a change it says "NOVA CIJENA" with
+     * the previous price, and an announcement entered in the editor ("od uto 21. 10.") is shown
+     * before it takes effect – prices change weekly, agents should see it before customers call.
+     *
+     * @param array|null $ann ['price' => '1.43', 'from' => 'Y-m-d', 'note' => '…'] from Settings
+     */
+    public static function priceBanner(array $rows, ?string $now = null, ?array $ann = null): string
+    {
+        $now ??= date('Y-m-d H:i:s');
+        $today = substr($now, 0, 10);
+        $priced = array_values(array_filter($rows, fn($s) => ($s['blue_price'] ?? '') !== ''));
         $unit = ' <span class="price-unit">/ l</span>';
-        $value = $min === $max
-            ? '<span class="nw">' . self::e(self::euro((string) $min)) . $unit . '</span>'
-            : '<span class="nw">' . self::e(self::euro((string) $min)) . '</span> – <span class="nw">' . self::e(self::euro((string) $max)) . $unit . '</span>';
+        $lines = [];
+        $value = '';
+        $mode = '';
+        if ($priced) {
+            $prices = array_map(fn($s) => (float) $s['blue_price'], $priced);
+            $min = min($prices); $max = max($prices);
+            $mode = self::mode(array_column($priced, 'blue_price'));
+            $latest = max(array_column($priced, 'blue_price_at'));
+            // Each price stays on one line together with its unit (no "/ l" alone on a phone).
+            $value = $min === $max
+                ? '<span class="nw">' . self::e(self::euro((string) $min)) . $unit . '</span>'
+                : '<span class="nw">' . self::e(self::euro((string) $min)) . '</span> – <span class="nw">' . self::e(self::euro((string) $max)) . $unit . '</span>';
+
+            $changed = array_filter($priced, fn($s) => $s['blue_price'] === $mode && ($s['blue_price_changed_at'] ?? '') !== '' && ($s['blue_price_prev'] ?? '') !== '');
+            if ($changed) {
+                $at = max(array_column($changed, 'blue_price_changed_at'));
+                $prev = self::mode(array_column($changed, 'blue_price_prev'));
+                $d = (float) $mode - (float) $prev;
+                $what = $d < 0 ? 'pojeftinjenje' : 'poskupljenje';
+                $isNew = strtotime($now) - strtotime($at) <= self::NEW_PRICE_DAYS * 86400;
+                $lines[] = $isNew
+                    ? '<p class="price-change"><span class="price-flag">Nova cijena</span> od ' . self::e(self::date(substr($at, 0, 10)))
+                        . ' – prije ' . self::e(self::euro($prev)) . ' (' . $what . ' ' . self::e(self::diff($d)) . ')</p>'
+                    : '<p class="price-meta">Zadnja promjena ' . self::e(self::date(substr($at, 0, 10))) . ' (prije ' . self::e(self::euro($prev)) . ')</p>';
+            }
+            $lines[] = '<p class="price-meta">Preuzeto s ina.hr ' . self::e(self::date(substr($latest, 0, 10)) . ' u ' . substr($latest, 11, 5))
+                . ($min === $max ? '' : ' · cijena se razlikuje po postajama, vidi karticu postaje') . '</p>';
+        }
+
+        // Announcement from the editor: before the date "NAJAVA", afterwards a warning while ina.hr
+        // still lists another price; hidden once ina.hr agrees or a week after the date.
+        if ($ann && ($ann['price'] ?? '') !== '' && ($ann['from'] ?? '') !== '') {
+            $when = self::dayName($ann['from']) . ' ' . self::date($ann['from']);
+            $note = ($ann['note'] ?? '') !== '' ? ' · ' . self::e($ann['note']) : '';
+            $annPrice = '<span class="nw">' . self::e(self::euro($ann['price'])) . $unit . '</span>';
+            if ($today < $ann['from']) {
+                array_unshift($lines, '<p class="price-change"><span class="price-flag">Najava</span> od ' . self::e($when) . ': ' . $annPrice
+                    . ($mode !== '' ? ' (sada ' . self::e(self::euro($mode)) . ')' : '') . $note . '</p>');
+            } elseif ($mode !== $ann['price'] && strtotime($today) - strtotime($ann['from']) <= self::NEW_PRICE_DAYS * 86400) {
+                // Still "Najava": "NOVA CIJENA" is reserved for a change ina.hr itself shows.
+                array_unshift($lines, '<p class="price-change"><span class="price-flag">Najava</span> vrijedi od ' . self::e($when) . ': ' . $annPrice . $note
+                    . ($mode !== '' ? ' – ina.hr još prikazuje ' . self::e(self::euro($mode)) : '') . '</p>');
+            }
+        }
+        if (!$priced && !$lines) return '';
         return '<section class="price-banner" aria-labelledby="price-title">'
             . '<h2 id="price-title" class="price-title">Cijena plavog dizela</h2>'
-            . '<p class="price-value">' . $value . '</p>'
-            . '<p class="price-meta">Preuzeto s ina.hr ' . self::e(self::date(substr($latest, 0, 10)) . ' u ' . substr($latest, 11, 5))
-            . ($min === $max ? '' : ' · cijena se razlikuje po postajama, vidi karticu postaje')
-            . '</p><p class="price-names">Eurodiesel plavi · plavi diesel · plavi dizel · plava nafta</p></section>';
+            . ($value !== '' ? '<p class="price-value">' . $value . '</p>' : '')
+            . implode('', $lines)
+            . '<p class="price-names">Eurodiesel plavi · plavi diesel · plavi dizel · plava nafta</p></section>';
     }
 
     /** 15. 11. 2026. */
@@ -139,7 +202,11 @@ final class Render
         if (($s['blue_price'] ?? '') !== '') {
             $h .= '<p class="card-price"><span class="price-name">' . self::e($s['blue_price_name'] ?: 'Plavi dizel') . '</span> '
                 . '<b>' . self::e(self::euro($s['blue_price'])) . '</b>'
-                . ' <span class="price-date">ina.hr, ' . self::e(self::date(substr($s['blue_price_at'], 0, 10))) . '</span></p>';
+                . ' <span class="price-date">ina.hr, ' . self::e(self::date(substr($s['blue_price_at'], 0, 10))) . '</span>'
+                . (($s['blue_price_prev'] ?? '') !== '' && ($s['blue_price_changed_at'] ?? '') !== ''
+                    && strtotime($today ?? date('Y-m-d')) - strtotime(substr($s['blue_price_changed_at'], 0, 10)) <= self::NEW_PRICE_DAYS * 86400
+                    ? ' <span class="price-new">nova cijena, prije ' . self::e(self::euro($s['blue_price_prev'])) . '</span>' : '')
+                . '</p>';
         }
         $h .= '<p class="card-address">' . self::e($place) . '</p>';
         if ($s['aliases'] !== '') {

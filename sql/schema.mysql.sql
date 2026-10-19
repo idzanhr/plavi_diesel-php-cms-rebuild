@@ -56,3 +56,9 @@ CREATE TABLE IF NOT EXISTS audit_log (
   created_at   DATETIME     NOT NULL,
   KEY audit_log_time (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Small key/value store (price announcement entered by the admin).
+CREATE TABLE IF NOT EXISTS settings (
+  name  VARCHAR(64) NOT NULL PRIMARY KEY,
+  value TEXT        NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

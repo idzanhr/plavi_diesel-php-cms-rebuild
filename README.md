@@ -84,7 +84,8 @@ The site already exists in CloudPanel (site user `crodesign93-plava-nafta`). Its
      "privremeno zatvoreno: N" count in the plain HTML):
      `5 0 * * *   php8.3 /home/crodesign93-plava-nafta/htdocs/plava-nafta.crodesign93.eu/bin/publish.php`
    * optional automatic working hours + closure check from ina.hr:
-     `* 4 * * *   php8.3 /home/crodesign93-plava-nafta/htdocs/plava-nafta.crodesign93.eu/bin/sync-ina-hours.php`
+     `* 0,4 * * *   php8.3 /home/crodesign93-plava-nafta/htdocs/plava-nafta.crodesign93.eu/bin/sync-ina-hours.php`
+     (two rounds a day; 00:xx catches the weekly price change at midnight)
 
 **Updating the code later:** `git pull && php8.3 bin/upgrade.php` (adds any new database columns, then re-publishes).
 Existing data is kept; new columns get safe defaults (e.g. every station starts as *open*). Generated files (`*.html` in the root,
@@ -251,6 +252,26 @@ stored with the name INA uses and the **time it was picked up**. A page without 
 * Colours: blue on blue (like the fuel), checked in `tests/contrast.test.js` (9.5:1 light, 10:1 dark).
 * Prices appear after the first sync on the server (`php8.3 bin/sync-ina-hours.php --all`); the daily cron keeps
   them and their date current.
+
+### Weekly price changes – so agents see them first
+
+Blue diesel prices now change weekly (company / government decision), usually from midnight.
+
+* **Change detected** on ina.hr: the banner shows **NOVA CIJENA od 21. 10. 2026. – prije 1,47 € (pojeftinjenje
+  −0,04 €)** for 7 days (in words, not only colour), each changed card says *nova cijena, prije 1,47 €*, and every
+  change is in the Dnevnik and under **Cijena → Zadnje promjene cijene**. After a week it becomes a quiet
+  "Zadnja promjena …" line.
+* **Announcement** (editor → **Cijena** → *Najava nove cijene*): when the new price is announced, enter it with the
+  date it applies from (+ a note, e.g. *Odluka Vlade RH*). Before that date the banner shows **NAJAVA od uto
+  27. 10. 2026.: 1,39 € / l (sada 1,43 €)**; from that date, while ina.hr still lists the old price, **NAJAVA vrijedi
+  od … – ina.hr još prikazuje 1,43 €**. It disappears by itself when ina.hr shows the same price, or a week later.
+* **Timing**: run the sync right after midnight too, so a midnight change is picked up before the first calls,
+  and keep the nightly publish (it switches announcements over on their date):
+  ```
+  * 0,4 * * *  php8.3 /home/crodesign93-plava-nafta/htdocs/plava-nafta.crodesign93.eu/bin/sync-ina-hours.php
+  5 0 * * *    php8.3 /home/crodesign93-plava-nafta/htdocs/plava-nafta.crodesign93.eu/bin/publish.php
+  ```
+  (`* 0,4` = every minute of 00:00–00:59 and 04:00–04:59, 1/60 of the stations each minute: two full rounds a day.)
 
 ## Sorting and map link
 

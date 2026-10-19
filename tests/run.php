@@ -419,5 +419,59 @@ test('banner shows one price or the range, with the date; card shows its own pri
     eq(false, str_contains(Render::card($row('', '')), 'card-price'));
 });
 
+echo "Weekly price changes and announcements\n";
+test('sync records a price change (old price, date, Dnevnik); the first pick-up is not a change', function () use ($hoursPage) {
+    $page = fn($p) => $hoursPage('06-22') . "<ul><li>Eurodiesel plavi - $p €</li></ul>";
+    Db::exec("UPDATE stations SET blue_price = '', blue_price_prev = '', blue_price_changed_at = '' WHERE name = 'Murter'");
+    InaHours::$fetch = fn(string $u) => $u === 'https://www.ina.hr/station/murter/' ? $page('1,47') : throw new RuntimeException('HTTP 404');
+    InaHours::sync(null, 'Murter');
+    eq(['1.47', '', ''], array_values(Db::one("SELECT blue_price, blue_price_prev, blue_price_changed_at FROM stations WHERE name = 'Murter'")));
+    InaHours::$fetch = fn(string $u) => $u === 'https://www.ina.hr/station/murter/' ? $page('1,43') : throw new RuntimeException('HTTP 404');
+    $log = [];
+    InaHours::sync(null, 'Murter', function ($l) use (&$log) { $log[] = $l; });
+    $m = Db::one("SELECT blue_price, blue_price_prev, blue_price_changed_at FROM stations WHERE name = 'Murter'");
+    eq(['1.43', '1.47', date('Y-m-d')], [$m['blue_price'], $m['blue_price_prev'], substr($m['blue_price_changed_at'], 0, 10)]);
+    eq('1,47 € → 1,43 € (Eurodiesel plavi)', Db::one("SELECT detail FROM audit_log WHERE action = 'price' ORDER BY id DESC LIMIT 1")['detail']);
+    eq(true, in_array('Murter: Eurodiesel plavi 1,47 € → 1,43 €', $log, true));
+    InaHours::sync(null, 'Murter'); // same price again: the change date stays
+    eq($m['blue_price_changed_at'], Db::one("SELECT blue_price_changed_at FROM stations WHERE name = 'Murter'")['blue_price_changed_at']);
+});
+$priced = fn($p, $prev = '', $changed = '') => ['name' => 'X', 'address' => '', 'postal_code' => '', 'city' => '', 'county' => '', 'phone' => '', 'aliases' => '', 'ina_url' => '', 'working_hours' => [],
+    'blue_price' => $p, 'blue_price_name' => 'Eurodiesel plavi', 'blue_price_at' => '2026-10-21 04:10:00', 'blue_price_prev' => $prev, 'blue_price_changed_at' => $changed];
+test('banner: NOVA CIJENA with the previous price for a week, then "Zadnja promjena"', function () use ($priced) {
+    $rows = [$priced('1.43', '1.47', '2026-10-21 00:20:00'), $priced('1.43', '1.47', '2026-10-21 00:40:00')];
+    $b = Render::priceBanner($rows, '2026-10-23 10:00:00');
+    eq(true, str_contains($b, '<span class="price-flag">Nova cijena</span> od 21. 10. 2026. – prije 1,47 € (pojeftinjenje −0,04 €)'));
+    $up = Render::priceBanner([$priced('1.51', '1.47', '2026-10-21 00:20:00')], '2026-10-22 10:00:00');
+    eq(true, str_contains($up, 'prije 1,47 € (poskupljenje +0,04 €)'));
+    $later = Render::priceBanner($rows, '2026-11-02 10:00:00');
+    eq(false, str_contains($later, 'price-flag'));
+    eq(true, str_contains($later, 'Zadnja promjena 21. 10. 2026. (prije 1,47 €)'));
+});
+test('announcement: NAJAVA before the date, warning while ina.hr differs, gone when it matches', function () use ($priced) {
+    $ann = ['price' => '1.39', 'from' => '2026-10-27', 'note' => 'Odluka Vlade RH']; // a Tuesday
+    $rows = [$priced('1.43')];
+    $before = Render::priceBanner($rows, '2026-10-26 12:00:00', $ann);
+    eq(true, str_contains($before, '<span class="price-flag">Najava</span> od uto 27. 10. 2026.: <span class="nw">1,39 € <span class="price-unit">/ l</span></span> (sada 1,43 €) · Odluka Vlade RH'));
+    $after = Render::priceBanner($rows, '2026-10-27 06:00:00', $ann);
+    eq(true, str_contains($after, '<span class="price-flag">Najava</span> vrijedi od uto 27. 10. 2026.: <span class="nw">1,39 € <span class="price-unit">/ l</span></span> · Odluka Vlade RH – ina.hr još prikazuje 1,43 €'));
+    eq(false, str_contains(Render::priceBanner([$priced('1.39')], '2026-10-27 08:00:00', $ann), 'price-flag')); // ina.hr caught up
+    eq(false, str_contains(Render::priceBanner($rows, '2026-11-10 08:00:00', $ann), 'Odluka')); // a week later
+    eq(true, str_contains(Render::priceBanner([], '2026-10-26 12:00:00', $ann), 'Najava')); // works with no ina.hr prices yet
+});
+test('card says "nova cijena, prije …" for a week after the change', function () use ($priced) {
+    eq(true, str_contains(Render::card($priced('1.43', '1.47', '2026-10-21 00:20:00'), '2026-10-25'), '<span class="price-new">nova cijena, prije 1,47 €</span>'));
+    eq(false, str_contains(Render::card($priced('1.43', '1.47', '2026-10-21 00:20:00'), '2026-11-05'), 'price-new'));
+});
+test('the announcement is stored and published with the page', function () {
+    PlavaNafta\Settings::set('price_announcement', ['price' => '1.39', 'from' => date('Y-m-d', strtotime('+3 days')), 'note' => '']);
+    PlavaNafta\Settings::set('price_announcement', ['price' => '1.38', 'from' => date('Y-m-d', strtotime('+3 days')), 'note' => '']); // update, not a 2nd row
+    eq(1, (int) Db::one("SELECT COUNT(*) n FROM settings")['n']);
+    Stations::publish();
+    eq(true, str_contains(file_get_contents(PlavaNafta\Config::get('web_root') . '/index.html'), '1,38 €'));
+    PlavaNafta\Settings::delete('price_announcement');
+    eq(null, PlavaNafta\Settings::get('price_announcement'));
+});
+
 echo "\n$count tests, $failures failed\n";
 exit($failures ? 1 : 0);
