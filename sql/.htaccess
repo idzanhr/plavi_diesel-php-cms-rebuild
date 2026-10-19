@@ -1,2 +1,0 @@
-# app/ must live outside the web root. If your host forces it inside, this blocks access.
-Require all denied

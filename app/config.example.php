@@ -1,6 +1,7 @@
 <?php
-// Copy to app/config.php and fill in. app/config.php is git-ignored.
-// Keep the whole app/ directory OUTSIDE the web root (only public/ is served).
+// Copy to app/config.php and fill in. app/config.php is git-ignored (and chmod 600 it).
+// The repo root is the web root (CloudPanel default). app/, bin/, sql/, tests/ are never
+// served: the vhost in deploy/cloudpanel-vhost.conf only whitelists the site's own files.
 
 return [
     // MySQL / MariaDB (production). For local dev you can use:
@@ -16,10 +17,11 @@ return [
     // Changing it invalidates the stored 2FA secret (run bin/reset-2fa.php).
     'app_key' => '',
 
-    // Public web root; the CMS regenerates index.html and data/stations.json here.
-    'public_dir' => __DIR__ . '/../public',
+    // Folder nginx serves (the repo root). The CMS regenerates index.html, the legal
+    // pages and data/stations.json (+ .gz copies) here on every save.
+    'web_root' => dirname(__DIR__),
 
-    // URL path of the hidden admin (must match the folder inside public/).
+    // URL path of the hidden admin (must match the plava-nafta/ folder name).
     'admin_path' => '/plava-nafta/',
 
     // Name shown in the authenticator app.

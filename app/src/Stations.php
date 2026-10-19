@@ -213,7 +213,7 @@ final class Stations
      */
     public static function publish(): void
     {
-        $dir = rtrim(Config::get('public_dir'), '/');
+        $dir = rtrim(Config::get('web_root'), '/');
         $templates = dirname(__DIR__) . '/templates';
         $rows = self::publicRows();
         $generatedAt = date('c');

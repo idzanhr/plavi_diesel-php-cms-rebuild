@@ -33,4 +33,4 @@ if (Auth::admin()) {
 }
 
 Stations::publish();
-echo "Javna stranica generirana (public/index.html, public/data/stations.json).\n";
+echo "Javna stranica generirana (index.html, data/stations.json).\n";

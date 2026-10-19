@@ -1,5 +1,5 @@
 <?php
-// Regenerates public/index.html and public/data/stations.json from the database.
+// Regenerates index.html, privatnost/kolacici/404.html and data/stations.json (+ .gz) from the database.
 declare(strict_types=1);
 require __DIR__ . '/_cli.php';
 

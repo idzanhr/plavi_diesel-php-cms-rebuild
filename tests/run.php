@@ -2,6 +2,7 @@
 // Dependency-free test runner:  php tests/run.php
 declare(strict_types=1);
 
+if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
 putenv('PLAVA_NAFTA_CONFIG=' . __DIR__ . '/config.test.php');
 require dirname(__DIR__) . '/app/bootstrap.php';
 

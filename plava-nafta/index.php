@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
 
-// Hidden admin. Path to app/ (kept outside the web root): adjust if your layout differs.
-require dirname(__DIR__, 2) . '/app/bootstrap.php';
+// Hidden admin. app/ sits next to this folder; nginx never serves it (see deploy/).
+require dirname(__DIR__) . '/app/bootstrap.php';
 
 use PlavaNafta\{Auth, Config, HttpError, Render, Stations, Totp, Web};
 

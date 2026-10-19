@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 // JSON API for the admin editor. Every call requires a session that passed password AND 2FA.
-require dirname(__DIR__, 2) . '/app/bootstrap.php';
+require dirname(__DIR__) . '/app/bootstrap.php';
 
 use PlavaNafta\{Audit, Auth, Config, HttpError, Stations, Totp, Web};
 

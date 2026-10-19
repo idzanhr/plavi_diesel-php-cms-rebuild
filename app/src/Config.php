@@ -22,7 +22,8 @@ final class Config
 
     public static function load(array $values): void
     {
-        self::$values = $values + self::DEFAULTS;
+        // The repo root is the web root unless the config says otherwise.
+        self::$values = $values + ['web_root' => dirname(__DIR__, 2)] + self::DEFAULTS;
     }
 
     public static function get(string $key): mixed

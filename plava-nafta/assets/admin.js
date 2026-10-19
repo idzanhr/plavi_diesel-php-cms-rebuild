@@ -186,7 +186,8 @@
         h("p", { class: "muted small", text: "Ako je postavljen bin/sync-ina-hours.php, radno vrijeme se automatski osvježava s ina.hr." }), hoursBox),
       h("div", { class: "span2 inline" }, saveBtn, h("button", { type: "button", class: "btn-ghost", onclick: function () { onDone(false); } }, "Odustani"))
     );
-    setTimeout(function () { form.querySelector("input").focus(); });
+    // Focus the first field once the form is in the page, unless the user is already typing in it.
+    setTimeout(function () { if (!form.contains(document.activeElement)) form.querySelector("input").focus(); });
     return form;
   }
 
