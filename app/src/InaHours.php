@@ -96,11 +96,31 @@ final class InaHours
     }
 
     /** @param int|null $minute batch 0-59, or null for every station */
+    public const INA_CLOSED_NOTE = 'Privremeno zatvoreno (prema ina.hr)';
+
+    /** True when every row of the ina.hr hours table says "PRIVREMENO ZATVORENO" for Mon–Fri, Sat and Sun. */
+    public static function hoursClosed(array $hours): bool
+    {
+        if (!$hours) return false;
+        foreach ($hours as $h) if (!self::rowClosed($h)) return false;
+        return true;
+    }
+
+    public static function rowClosed(array $h): bool
+    {
+        foreach (['week', 'sat', 'sun'] as $k) {
+            if (!preg_match('/privremeno\s+zatvoren/iu', (string) ($h[$k] ?? ''))) return false;
+        }
+        return true;
+    }
+
     public static function sync(?int $minute): array
     {
-        $rows = Db::all('SELECT id, name, phone, ina_url, working_hours, ina_notice FROM stations ORDER BY id');
+        $rows = Db::all('SELECT id, name, phone, ina_url, working_hours, ina_notice, status, status_source FROM stations ORDER BY id');
         $batch = $minute === null ? $rows : self::dailyBatch($rows, $minute);
-        $result = ['checked' => count($batch), 'updated' => 0, 'unchanged' => 0, 'failed' => 0, 'notices' => 0, 'directoryAvailable' => true];
+        $result = ['checked' => count($batch), 'updated' => 0, 'unchanged' => 0, 'failed' => 0, 'notices' => 0,
+            'closed' => 0, 'reopened' => 0, 'directoryAvailable' => true];
+        $autoClose = (bool) Config::get('ina_auto_close');
         $directory = [];
         try { $directory = self::parseDirectory((self::$fetch)(self::DIRECTORY_URL)); }
         catch (\Throwable) { $result['directoryAvailable'] = false; }
@@ -111,10 +131,13 @@ final class InaHours
                 $url = count($matches) === 1 ? $matches[0]['url'] : self::safeUrl($station['ina_url']);
                 if (!$url) throw new \RuntimeException('No safe station URL');
                 $html = (self::$fetch)($url);
-                // Closure wording is only FLAGGED for the admin (shown in the editor), never applied
-                // automatically: the same words could come from a site-wide banner on ina.hr.
-                // Checked before the hours, because a closed station's page may have no hours table.
-                $notice = self::closureNotice($html);
+                try { $hours = self::parseHours($html); } catch (\Throwable) { $hours = null; }
+                $closedByIna = $hours !== null && self::hoursClosed($hours);
+
+                // 1. Notice for the admin. The hours table saying "PRIVREMENO ZATVORENO" every day is
+                //    INA's own signal; any other closure wording on the page is only flagged, because it
+                //    could come from a site-wide banner. Checked even when the page has no hours table.
+                $notice = $closedByIna ? 'Radno vrijeme na ina.hr: PRIVREMENO ZATVORENO (svi dani)' : self::closureNotice($html);
                 if ($notice !== (string) $station['ina_notice']) {
                     Db::exec('UPDATE stations SET ina_notice = ? WHERE id = ?', [$notice, $station['id']]);
                     if ($notice !== '') {
@@ -122,7 +145,23 @@ final class InaHours
                         Audit::log('ina-notice', $station['name'], $notice);
                     }
                 }
-                $hours = self::parseHours($html);
+
+                // 2. Status. Only closures the sync made itself (status_source = ina) are reopened;
+                //    closures set by the admin are never changed.
+                if ($autoClose && $closedByIna && $station['status'] === 'open') {
+                    Db::exec("UPDATE stations SET status = 'closed', status_source = 'ina', status_note = ?, closed_from = '', closed_until = '', updated_at = ? WHERE id = ?",
+                        [self::INA_CLOSED_NOTE, Db::now(), $station['id']]);
+                    Audit::log('ina-close', $station['name'], $notice);
+                    $result['closed']++;
+                } elseif ($hours !== null && !$closedByIna && $station['status'] === 'closed' && $station['status_source'] === 'ina') {
+                    Db::exec("UPDATE stations SET status = 'open', status_source = '', status_note = '', closed_from = '', closed_until = '', updated_at = ? WHERE id = ?",
+                        [Db::now(), $station['id']]);
+                    Audit::log('ina-reopen', $station['name'], 'ina.hr ponovno prikazuje radno vrijeme');
+                    $result['reopened']++;
+                }
+
+                // 3. Working hours (kept even when they say closed, so a reopening is noticed).
+                if ($hours === null) throw new \RuntimeException('No working hours');
                 $saved = json_decode((string) $station['working_hours'], true) ?: [];
                 if ($url === $station['ina_url'] && self::sameHours($saved, $hours)) { $result['unchanged']++; continue; }
                 Db::exec('UPDATE stations SET ina_url = ?, working_hours = ?, updated_at = ? WHERE id = ?',
@@ -132,7 +171,7 @@ final class InaHours
                 $result['failed']++;
             }
         }
-        if ($result['updated'] > 0 || $result['notices'] > 0) {
+        if ($result['updated'] + $result['notices'] + $result['closed'] + $result['reopened'] > 0) {
             Audit::log('ina-sync', '', json_encode($result));
             Stations::publish();
         }

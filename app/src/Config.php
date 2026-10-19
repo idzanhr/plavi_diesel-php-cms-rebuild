@@ -18,6 +18,7 @@ final class Config
         'lockout_minutes' => 15,
         'lockout_redirect' => '',
         'trust_proxy' => false,
+        'ina_auto_close' => true,
     ];
 
     public static function load(array $values): void

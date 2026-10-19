@@ -95,7 +95,11 @@ final class Render
         if ($s['aliases'] !== '') {
             $h .= '<p class="card-aliases"><span>Zovu je: </span>' . self::e($s['aliases']) . '</p>';
         }
-        if ($s['working_hours']) {
+        // Rows that only say "PRIVREMENO ZATVORENO" (how ina.hr marks a closed station) are not
+        // repeated as hours; the closure badge already says it.
+        $hoursRows = array_values(array_filter($s['working_hours'], fn($w) => !InaHours::rowClosed($w)));
+        if ($hoursRows) {
+            $s['working_hours'] = $hoursRows;
             $multi = count($s['working_hours']) > 1;
             $h .= '<div class="card-hours">';
             foreach ($s['working_hours'] as $w) {

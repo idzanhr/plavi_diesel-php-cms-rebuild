@@ -221,5 +221,63 @@ test('sync flags closure wording even when the page has no hours table, and clea
     eq('', Db::one("SELECT ina_notice FROM stations WHERE name = 'Babina Greda'")['ina_notice']);
 });
 
+echo "ina.hr hours table says PRIVREMENO ZATVORENO (e.g. https://www.ina.hr/station/porec-obala/)\n";
+// Same structure as the live page: header row, then "Redovno" with every day closed.
+$porec = '<table class="station__info__tablebox__table"><tr><th>Radno vrijeme</th><th>Radni dan</th><th>Subota</th><th>Nedjelja</th><th>Blagdani</th></tr>'
+    . '<tr><td>Redovno</td><td>PRIVREMENO<br>ZATVORENO</td><td>PRIVREMENO ZATVORENO</td><td>PRIVREMENO ZATVORENO</td><td>PRIVREMENO ZATVORENO</td></tr></table>';
+$bg = fn() => Db::one("SELECT * FROM stations WHERE name = 'Babina Greda'");
+test('the closed hours table is parsed and recognised; normal hours are not', function () use ($porec, $fixture) {
+    $h = InaHours::parseHours($porec);
+    eq('PRIVREMENO ZATVORENO', $h[0]['week']);
+    eq(true, InaHours::hoursClosed($h));
+    eq(false, InaHours::hoursClosed(InaHours::parseHours($fixture)));
+    eq(false, InaHours::hoursClosed([]));
+});
+test('sync closes the station automatically, marked as coming from ina.hr', function () use ($porec, $bg) {
+    InaHours::$fetch = fn(string $url) => $url === InaHours::DIRECTORY_URL ? 'x' : $porec;
+    $r = InaHours::sync(0);
+    eq([1, 0], [$r['closed'], $r['failed']]);
+    $s = $bg();
+    eq(['closed', 'ina', InaHours::INA_CLOSED_NOTE], [$s['status'], $s['status_source'], $s['status_note']]);
+    eq('Radno vrijeme na ina.hr: PRIVREMENO ZATVORENO (svi dani)', $s['ina_notice']);
+    eq(0, InaHours::sync(0)['closed']); // already closed: nothing happens twice
+});
+test('public card shows the badge but not "Pon–Pet: PRIVREMENO ZATVORENO" as hours', function () use ($porec) {
+    $html = Render::card(Stations::publicRows()[0], date('Y-m-d'));
+    eq(true, str_contains($html, 'Privremeno zatvoreno'));
+    eq(false, str_contains($html, 'card-hours'));
+    eq(false, str_contains($html, 'Pon–Pet: <b>PRIVREMENO'));
+});
+test('editing only the note keeps it automatic; adding dates makes it the admin\'s', function () use ($bg) {
+    $id = (int) $bg()['id'];
+    eq('ina', Stations::save($id, ['status_note' => 'Radovi, otvaranje uskoro'] + Stations::find($id))['status_source']);
+    eq('admin', Stations::save($id, ['closed_until' => '2027-01-31'] + Stations::find($id))['status_source']);
+    Stations::save($id, ['closed_until' => '', 'status' => 'closed'] + Stations::find($id)); // still admin
+    Db::exec("UPDATE stations SET status_source = 'ina' WHERE id = ?", [$id]); // back to automatic for the next test
+});
+test('sync reopens its own closure as soon as ina.hr shows real hours again', function () use ($fixture, $bg) {
+    InaHours::$fetch = fn(string $url) => $url === InaHours::DIRECTORY_URL ? 'x' : $fixture;
+    eq(1, InaHours::sync(0)['reopened']);
+    $s = $bg();
+    eq(['open', '', '', ''], [$s['status'], $s['status_source'], $s['status_note'], $s['ina_notice']]);
+});
+test('a closure set by the admin is never reopened by the sync', function () use ($fixture, $bg) {
+    $id = (int) $bg()['id'];
+    Stations::save($id, ['status' => 'closed', 'status_note' => 'Radovi'] + Stations::find($id));
+    eq('admin', $bg()['status_source']);
+    InaHours::$fetch = fn(string $url) => $url === InaHours::DIRECTORY_URL ? 'x' : $fixture;
+    eq(0, InaHours::sync(0)['reopened']);
+    eq('closed', $bg()['status']);
+    Stations::save($id, ['status' => 'open'] + Stations::find($id));
+});
+test("'ina_auto_close' => false only flags, never closes", function () use ($porec, $bg) {
+    PlavaNafta\Config::load(['ina_auto_close' => false] + require __DIR__ . '/config.test.php');
+    InaHours::$fetch = fn(string $url) => $url === InaHours::DIRECTORY_URL ? 'x' : $porec;
+    $r = InaHours::sync(0);
+    eq([0, 1], [$r['closed'], $r['notices']]);
+    eq('open', $bg()['status']);
+    PlavaNafta\Config::load(require __DIR__ . '/config.test.php');
+});
+
 echo "\n$count tests, $failures failed\n";
 exit($failures ? 1 : 0);

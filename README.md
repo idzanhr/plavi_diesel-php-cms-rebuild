@@ -146,10 +146,18 @@ shown on the site (e.g. "Radovi na postaji") and optional **Od / Do** dates.
   nothing was published; the nightly `publish.php` cron keeps the plain HTML in step.
 * Setting a station back to *Otvorena* clears the note and dates. In the editor, **Prikaz → Privremeno zatvorene**
   lists all closures; an expired one is flagged "Zatvaranje isteklo – provjerite".
-* **ina.hr check**: during the working-hours sync, each station page is scanned for wording such as
-  "privremeno zatvoreno", "zatvoreno zbog …" or "ne radi zbog …". A match is **only flagged** (⚠ in the station list,
-  **Prikaz → Napomena s INA.hr za provjeru**, and in the Dnevnik), never applied automatically: you check and set
-  the status yourself. The flag clears when the wording is gone from ina.hr.
+* **ina.hr check** (during the working-hours sync), two levels:
+  * **Hours table says PRIVREMENO ZATVORENO for every day** – how INA marks a closed station, e.g.
+    [Poreč-obala](https://www.ina.hr/station/porec-obala/). This is INA's own data, so the sync **closes the station
+    automatically** (badge "Privremeno zatvoreno", note "Privremeno zatvoreno (prema ina.hr)", marked
+    *automatski s ina.hr* in the editor) and **reopens it by itself** once ina.hr shows real hours again. The card does
+    not repeat "Pon–Pet: PRIVREMENO ZATVORENO" as hours. Turn this off with `'ina_auto_close' => false` (then it is
+    only flagged).
+  * **Other closure wording on the page** ("privremeno zatvoreno", "zatvoreno zbog …", "ne radi zbog …" in a text)
+    is **only flagged** (⚠ in the station list, **Prikaz → Napomena s INA.hr za provjeru**, Dnevnik), because it
+    could be a site-wide banner; you decide. The flag clears when the wording disappears.
+  * **Closures you set yourself are never changed by the sync.** An automatic closure stays automatic while you only
+    edit its note; once you enter Od/Do dates it becomes yours.
 
 ### Working hours from ina.hr (optional cron)
 
@@ -183,5 +191,5 @@ by station name; columns missing from the file are left unchanged. Alternatively
 cp app/config.example.php app/config.php   # set dsn to 'sqlite:' . __DIR__ . '/../var/plava-nafta.sqlite' and an app_key
 mkdir -p var && php bin/install.php
 php -S 127.0.0.1:8000 -t . bin/dev-router.php   # same whitelist as production; http://127.0.0.1:8000/plava-nafta/
-php tests/run.php                          # 26 tests: TOTP/RFC 6238, replay, crypto, INA parser, import, closures
+php tests/run.php                          # 33 tests: TOTP/RFC 6238, replay, crypto, INA parser, import, closures
 ```

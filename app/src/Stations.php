@@ -133,17 +133,33 @@ final class Stations
 
         $before = $id ? self::find($id) : null;
         if ($id && !$before) throw new HttpError(404, 'Postaja ne postoji.');
-        $params = array_merge(array_map(fn($f) => $row[$f], self::TEXT_FIELDS), [json_encode($row['working_hours'], JSON_UNESCAPED_UNICODE), Db::now()]);
+        $source = self::statusSource($before, $row);
+        $params = array_merge(array_map(fn($f) => $row[$f], self::TEXT_FIELDS), [json_encode($row['working_hours'], JSON_UNESCAPED_UNICODE), $source, Db::now()]);
+        $cols = [...self::TEXT_FIELDS, 'working_hours', 'status_source', 'updated_at'];
         if ($id) {
-            $set = implode(', ', array_map(fn($f) => "$f = ?", [...self::TEXT_FIELDS, 'working_hours', 'updated_at']));
+            $set = implode(', ', array_map(fn($f) => "$f = ?", $cols));
             Db::exec("UPDATE stations SET $set WHERE id = ?", [...$params, $id]);
         } else {
-            $cols = implode(', ', [...self::TEXT_FIELDS, 'working_hours', 'updated_at']);
+            $cols = implode(', ', $cols);
             Db::exec("INSERT INTO stations ($cols) VALUES (" . implode(', ', array_fill(0, count($params), '?')) . ')', $params);
             $id = (int) Db::pdo()->lastInsertId();
         }
         Audit::log($before ? 'update' : 'create', $row['name'], $before ? self::diff($before, $row) : '');
         return self::find($id);
+    }
+
+    /**
+     * Who owns a closure. 'ina' = closed automatically from the ina.hr hours table, so the
+     * sync may also reopen it. It stays 'ina' while the admin only edits the note or other
+     * fields; setting dates (or closing an open station) makes it the admin's ('admin'),
+     * and the sync never touches those.
+     */
+    private static function statusSource(?array $before, array $row): string
+    {
+        if ($row['status'] !== 'closed') return '';
+        $keepIna = $before && ($before['status_source'] ?? '') === 'ina' && $before['status'] === 'closed'
+            && $row['closed_from'] === '' && $row['closed_until'] === '';
+        return $keepIna ? 'ina' : 'admin';
     }
 
     public static function delete(int $id): void

@@ -64,6 +64,7 @@ final class Db
             'closed_from'  => "VARCHAR(10) NOT NULL DEFAULT ''",       // YYYY-MM-DD, empty = already closed
             'closed_until' => "VARCHAR(10) NOT NULL DEFAULT ''",       // YYYY-MM-DD, empty = until further notice
             'ina_notice'   => "VARCHAR(500) NOT NULL DEFAULT ''",      // closure wording found on ina.hr (sync)
+            'status_source' => "VARCHAR(8) NOT NULL DEFAULT ''",       // who closed it: admin | ina (auto, from the hours table)
         ],
     ];
 

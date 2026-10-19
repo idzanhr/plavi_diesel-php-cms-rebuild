@@ -42,6 +42,11 @@ return [
     'lockout_minutes'         => 15,
     'lockout_redirect'        => 'https://crodesign93.eu',
 
+    // When the ina.hr hours table says "PRIVREMENO ZATVORENO" for every day, the sync marks the
+    // station temporarily closed (and reopens it when real hours return). Closures you set by
+    // hand are never changed. false = only flag it in the editor.
+    'ina_auto_close' => true,
+
     // Set to true only behind a reverse proxy/CDN you control that sets X-Forwarded-For.
     'trust_proxy' => false,
 ];

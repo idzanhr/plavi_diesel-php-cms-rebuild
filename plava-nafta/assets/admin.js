@@ -67,7 +67,7 @@
   function hrDate(ymd) { var p = (ymd || "").split("-"); return p.length === 3 ? (+p[2]) + ". " + (+p[1]) + ". " + p[0] + "." : ""; }
   function statusBadge(s) {
     var st = closureState(s), until = s.closed_until ? " do " + hrDate(s.closed_until) : "";
-    if (st === "closed") return h("span", { class: "card-badge badge-closed", text: "Privremeno zatvoreno" + until });
+    if (st === "closed") return h("span", { class: "card-badge badge-closed", text: "Privremeno zatvoreno" + until + (s.status_source === "ina" ? " · automatski s ina.hr" : "") });
     if (st === "upcoming") return h("span", { class: "card-badge badge-upcoming", text: "Zatvaranje od " + hrDate(s.closed_from) + until });
     if (st === "expired") return h("span", { class: "card-badge badge-upcoming", text: "Zatvaranje isteklo " + hrDate(s.closed_until) + " – provjerite i označite kao otvorenu" });
     return null;
@@ -210,6 +210,7 @@
     var statusBox = h("div", { class: "span2 status-box" },
       h("p", { class: "label", text: "Status postaje" }),
       s && s.ina_notice ? h("p", { class: "ina-notice", text: "⚠ Na ina.hr piše: " + s.ina_notice }) : null,
+      s && s.status === "closed" && s.status_source === "ina" ? h("p", { class: "muted small", text: "Zatvoreno automatski prema tablici radnog vremena na ina.hr – ponovno će se otvoriti samo kad ina.hr opet prikaže radno vrijeme. Ako upišete datume, zatvaranje postaje vaše i sinkronizacija ga više ne mijenja." }) : null,
       statusSel, closedFields,
       h("p", { class: "muted small", text: "Zatvorena postaja ostaje na popisu s oznakom, a posjetitelji je mogu sakriti filtrom „Samo otvorene”. Nakon datuma „do” oznaka sama nestaje." }));
     syncStatus();
@@ -279,7 +280,7 @@
 
   // ---- audit log
   var ACTIONS = { create: "Dodano", update: "Izmijenjeno", "delete": "Obrisano", "import": "Uvoz", publish: "Objava", password: "Promjena lozinke",
-    "recovery-codes": "Novi rezervni kodovi", "totp-rotate": "Nova 2FA aplikacija", "ina-sync": "INA radno vrijeme", "ina-notice": "INA.hr: napomena o zatvaranju", "totp-reset": "2FA resetirana (CLI)" };
+    "recovery-codes": "Novi rezervni kodovi", "totp-rotate": "Nova 2FA aplikacija", "ina-sync": "INA radno vrijeme", "ina-notice": "INA.hr: napomena o zatvaranju", "ina-close": "INA.hr: automatski zatvoreno", "ina-reopen": "INA.hr: automatski ponovno otvoreno", "totp-reset": "2FA resetirana (CLI)" };
   function viewAudit() {
     view.replaceChildren(h("p", { class: "muted", text: "Učitavanje…" }));
     api("audit").then(function (d) {
