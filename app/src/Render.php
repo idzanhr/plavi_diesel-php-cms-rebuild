@@ -43,24 +43,53 @@ final class Render
             $options .= '<option value="' . self::e($county) . '">' . self::e($county) . " ($n)</option>\n";
         }
 
+        $today = date('Y-m-d', strtotime($generatedAt));
+        $closedNow = count(array_filter($rows, fn($s) => Stations::closureState($s, $today) === 'closed'));
+        // The closed count is re-counted in the browser (site.js), so it stays right between publishes.
+        $summary = self::e(count($rows) . ' postaja · ' . count($counts) . ' županija')
+            . '<span id="closed-summary"' . ($closedNow ? '' : ' hidden') . '> · privremeno zatvoreno: <span id="closed-count">' . $closedNow . '</span></span>';
+
         return strtr($template, [
-            '{{SUMMARY}}' => count($rows) . ' postaja · ' . count($counts) . ' županija',
+            '{{SUMMARY}}' => $summary,
+            '{{CARDS}}' => implode("\n", array_map(fn($s) => self::card($s, $today), $rows)),
             '{{TOTAL}}' => (string) count($rows),
             '{{COUNTY_OPTIONS}}' => $options,
-            '{{CARDS}}' => implode("\n", array_map([self::class, 'card'], $rows)),
             '{{GENERATED_AT}}' => self::e($generatedAt),
             '{{GENERATED_HUMAN}}' => self::e(date('j. n. Y. H:i', strtotime($generatedAt))),
         ]);
     }
 
-    public static function card(array $s): string
+    /** 15. 11. 2026. */
+    public static function date(string $ymd): string
     {
-        $search = implode(' ', [$s['name'], $s['city'], $s['postal_code'], $s['address'], $s['phone'], $s['aliases'], $s['county']]);
+        return $ymd === '' ? '' : date('j. n. Y.', strtotime($ymd));
+    }
+
+    public static function card(array $s, ?string $today = null): string
+    {
+        $status = $s['status'] ?? 'open';
+        $state = Stations::closureState($s, $today ?? date('Y-m-d'));
+        $search = implode(' ', [$s['name'], $s['city'], $s['postal_code'], $s['address'], $s['phone'], $s['aliases'], $s['county'],
+            $status === 'closed' ? 'privremeno zatvoreno ' . ($s['status_note'] ?? '') : '']);
         $place = trim($s['address'] . ', ' . trim($s['postal_code'] . ' ' . $s['city']), ', ');
         $tel = preg_replace('/[^\d+]/', '', $s['phone']);
 
-        $h = '<article class="card" data-county="' . self::e($s['county']) . '" data-search="' . self::e($search) . '">';
+        $h = '<article class="card' . ($state === 'closed' ? ' card-closed' : '') . '" data-county="' . self::e($s['county']) . '" data-search="' . self::e($search) . '"';
+        if ($status === 'closed') {
+            // The browser re-evaluates these dates on load (site.js), so closures start/end on time.
+            $h .= ' data-status="closed" data-from="' . self::e($s['closed_from']) . '" data-until="' . self::e($s['closed_until']) . '"';
+        }
+        $h .= '>';
         $h .= '<p class="card-county">' . self::e($s['county']) . '</p>';
+        if ($status === 'closed') {
+            $until = $s['closed_until'] !== '' ? ' do ' . self::date($s['closed_until']) : '';
+            $h .= '<p class="card-badge badge-closed" data-badge="closed"' . ($state === 'closed' ? '' : ' hidden') . '>Privremeno zatvoreno' . self::e($until) . '</p>';
+            $h .= '<p class="card-badge badge-upcoming" data-badge="upcoming"' . ($state === 'upcoming' ? '' : ' hidden') . '>Najavljeno zatvaranje od '
+                . self::e(self::date($s['closed_from']) . $until) . '</p>';
+            if ($s['status_note'] !== '') {
+                $h .= '<p class="card-status-note" data-badge="note"' . ($state === 'open' ? ' hidden' : '') . '>' . self::e($s['status_note']) . '</p>';
+            }
+        }
         $h .= '<h2 class="card-title">' . self::e($s['name']) . '</h2>';
         $h .= '<p class="card-address">' . self::e($place) . '</p>';
         if ($s['aliases'] !== '') {

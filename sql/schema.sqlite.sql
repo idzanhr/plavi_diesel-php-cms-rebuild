@@ -1,5 +1,6 @@
 -- Plava nafta CMS - SQLite schema (local development and tests). Re-runnable.
 
+-- Later columns (status, closed_from/until, ina_notice …) are added by Db::migrate() → UPGRADES.
 CREATE TABLE IF NOT EXISTS stations (
   id            INTEGER PRIMARY KEY AUTOINCREMENT,
   name          TEXT NOT NULL UNIQUE,

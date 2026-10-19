@@ -79,10 +79,15 @@ The site already exists in CloudPanel (site user `crodesign93-plava-nafta`). Its
    **Varnish Cache**: leave it off for this site (the pages are static and pre-compressed already).
 5. Open `https://plava-nafta.crodesign93.eu/plava-nafta/`, log in, **scan the QR code**, enter the code and
    **save the 8 recovery codes**. Optionally set `'allow_web_enrollment' => false` afterwards.
-6. **Cron Jobs** – optional automatic working hours from ina.hr:
-   `* 4 * * *   php8.3 /home/crodesign93-plava-nafta/htdocs/plava-nafta.crodesign93.eu/bin/sync-ina-hours.php`
+6. **Cron Jobs**:
+   * nightly re-publish, so closures that start/end today are right even without JavaScript (and the
+     "privremeno zatvoreno: N" count in the plain HTML):
+     `5 0 * * *   php8.3 /home/crodesign93-plava-nafta/htdocs/plava-nafta.crodesign93.eu/bin/publish.php`
+   * optional automatic working hours + closure check from ina.hr:
+     `* 4 * * *   php8.3 /home/crodesign93-plava-nafta/htdocs/plava-nafta.crodesign93.eu/bin/sync-ina-hours.php`
 
-**Updating the code later:** `git pull && php8.3 bin/publish.php`. Generated files (`*.html` in the root,
+**Updating the code later:** `git pull && php8.3 bin/upgrade.php` (adds any new database columns, then re-publishes).
+Existing data is kept; new columns get safe defaults (e.g. every station starts as *open*). Generated files (`*.html` in the root,
 `data/stations.json`, `*.gz`) are git-ignored, so live CMS edits never conflict with a pull.
 
 ### Whitelist: leftovers in the folder are never exposed
@@ -124,6 +129,28 @@ array (it prints nothing), and every script in `bin/` and `tests/` exits unless 
   per IP by nginx (on top of the app's own lockout).
 * Deliberately **no** `open_file_cache`: it would keep serving the previous page for up to a minute after an edit.
 
+## Temporarily closed stations ("Privremeno zatvoreno")
+
+In the editor every station has a **Status postaje**: *Otvorena* or *Privremeno zatvorena*, with an optional note
+shown on the site (e.g. "Radovi na postaji") and optional **Od / Do** dates.
+
+| Situation | Set | Public card |
+|---|---|---|
+| Closed now, end unknown | status closed, no dates | red **Privremeno zatvoreno** + note |
+| Closed now until a date | **Do** = last closed day | **Privremeno zatvoreno do 10. 11. 2026.** – disappears by itself the day after |
+| Works announced | **Od** (+ **Do**) in the future | amber **Najavljeno zatvaranje od 1. 12. 2026. do 5. 12. 2026.**, turns red on the start day |
+
+* Closed stations **stay in the list** (agents need to see them) and are marked; visitors can tick **Samo otvorene**
+  to hide stations closed today (`?otvorene=1` in a shared link). Searching "zatvoreno" or the note finds them too.
+* The browser re-checks the dates against today's date in Zagreb, so a closure starts and ends on the right day even if
+  nothing was published; the nightly `publish.php` cron keeps the plain HTML in step.
+* Setting a station back to *Otvorena* clears the note and dates. In the editor, **Prikaz → Privremeno zatvorene**
+  lists all closures; an expired one is flagged "Zatvaranje isteklo – provjerite".
+* **ina.hr check**: during the working-hours sync, each station page is scanned for wording such as
+  "privremeno zatvoreno", "zatvoreno zbog …" or "ne radi zbog …". A match is **only flagged** (⚠ in the station list,
+  **Prikaz → Napomena s INA.hr za provjeru**, and in the Dnevnik), never applied automatically: you check and set
+  the status yourself. The flag clears when the wording is gone from ina.hr.
+
 ### Working hours from ina.hr (optional cron)
 
 Port of the original sync job – updates only `ina_url` + `working_hours`, never erases hours if INA's page is
@@ -140,7 +167,8 @@ php bin/sync-ina-hours.php --all                   # everything at once
 |---|---|
 | `php bin/set-admin.php [--email=…] [--temporary]` | change admin e-mail/password (logs out all sessions) |
 | `php bin/reset-2fa.php [--print]` | lost phone *and* recovery codes: remove 2FA (or set a new secret and print it) |
-| `php bin/publish.php` | regenerate all public files (after `git pull` or editing a template) |
+| `php bin/upgrade.php` | after `git pull`: new database columns + re-publish |
+| `php bin/publish.php` | regenerate all public files (nightly cron, or after editing a template) |
 
 ## Migrating the live data from Supabase
 
@@ -155,5 +183,5 @@ by station name; columns missing from the file are left unchanged. Alternatively
 cp app/config.example.php app/config.php   # set dsn to 'sqlite:' . __DIR__ . '/../var/plava-nafta.sqlite' and an app_key
 mkdir -p var && php bin/install.php
 php -S 127.0.0.1:8000 -t . bin/dev-router.php   # same whitelist as production; http://127.0.0.1:8000/plava-nafta/
-php tests/run.php                          # 19 tests: RFC 6238 vectors, replay, crypto, INA parser, import/validation
+php tests/run.php                          # 26 tests: TOTP/RFC 6238, replay, crypto, INA parser, import, closures
 ```

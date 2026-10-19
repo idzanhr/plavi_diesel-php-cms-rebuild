@@ -1,5 +1,6 @@
 -- Plava nafta CMS - MySQL 8 / MariaDB 10.4+ schema. Re-runnable.
 
+-- Later columns (status, closed_from/until, ina_notice …) are added by Db::migrate() → UPGRADES.
 CREATE TABLE IF NOT EXISTS stations (
   id            INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   name          VARCHAR(190) NOT NULL,

@@ -63,3 +63,11 @@ details summary { cursor: pointer; color: var(--accent-text); }
 .toast { position: fixed; right: 1rem; bottom: 1rem; z-index: 60; max-width: min(24rem, calc(100vw - 2rem)); border-radius: .5rem; padding: .75rem 1rem; background: var(--foreground); color: var(--background); font-size: .875rem; box-shadow: 0 8px 24px oklch(0 0 0 / 20%); }
 .toast-error { background: var(--destructive); color: #fff; }
 code { font-family: var(--font-mono); }
+.toolbar-filter { flex: 0 0 auto; width: auto; max-width: 16rem; }
+.status-box { display: grid; gap: .5rem; border: 1px dashed var(--border); border-radius: .5rem; padding: .75rem; }
+.status-box > select { max-width: 16rem; }
+.status-fields { display: grid; gap: .5rem; }
+@media (min-width: 768px) { .status-fields { grid-template-columns: 2fr 1fr 1fr; } }
+.ina-notice { margin-top: .375rem; font-size: .8125rem; color: var(--upcoming-fg); background: var(--upcoming-bg); border-radius: .375rem; padding: .25rem .5rem; }
+.row-main .card-badge { margin-top: .375rem; }
+@media (max-width: 640px) { .toolbar { flex-wrap: wrap; } .toolbar-filter { max-width: none; flex: 1; } }

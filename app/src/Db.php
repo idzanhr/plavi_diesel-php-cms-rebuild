@@ -56,10 +56,32 @@ final class Db
     }
 
     /** Runs sql/schema.<driver>.sql. Safe to re-run (CREATE TABLE IF NOT EXISTS). */
+    /** Columns added after the first release. Existing databases get them on the next migrate(). */
+    private const UPGRADES = [
+        'stations' => [
+            'status'       => "VARCHAR(16) NOT NULL DEFAULT 'open'",   // open | closed (temporarily)
+            'status_note'  => "VARCHAR(255) NOT NULL DEFAULT ''",      // e.g. "Radovi na postaji"
+            'closed_from'  => "VARCHAR(10) NOT NULL DEFAULT ''",       // YYYY-MM-DD, empty = already closed
+            'closed_until' => "VARCHAR(10) NOT NULL DEFAULT ''",       // YYYY-MM-DD, empty = until further notice
+            'ina_notice'   => "VARCHAR(500) NOT NULL DEFAULT ''",      // closure wording found on ina.hr (sync)
+        ],
+    ];
+
     public static function migrate(): void
     {
         $file = dirname(__DIR__, 2) . '/sql/schema.' . (self::driver() === 'sqlite' ? 'sqlite' : 'mysql') . '.sql';
         foreach (self::statements((string) file_get_contents($file)) as $sql) self::pdo()->exec($sql);
+        foreach (self::UPGRADES as $table => $columns) {
+            foreach ($columns as $column => $definition) self::addColumnIfMissing($table, $column, $definition);
+        }
+    }
+
+    public static function addColumnIfMissing(string $table, string $column, string $definition): void
+    {
+        $existing = self::driver() === 'sqlite'
+            ? array_column(self::all("PRAGMA table_info($table)"), 'name')
+            : array_column(self::all('SELECT COLUMN_NAME AS name FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?', [$table]), 'name');
+        if (!in_array($column, $existing, true)) self::pdo()->exec("ALTER TABLE $table ADD COLUMN $column $definition");
     }
 
     public static function statements(string $sql): array

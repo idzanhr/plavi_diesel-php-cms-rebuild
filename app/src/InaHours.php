@@ -73,6 +73,22 @@ final class InaHours
         return $hours;
     }
 
+    /**
+     * Sentence on an INA station page that says the station is temporarily closed
+     * ("privremeno zatvoreno", "zatvoreno zbog radova", "ne radi zbog …"), or ''.
+     */
+    public static function closureNotice(string $html): string
+    {
+        $html = preg_replace('#<(script|style|noscript)\b.*?</\1>#is', ' ', $html);
+        $html = preg_replace('#<(br|/p|/div|/li|/tr|/h\d)\b[^>]*>#i', '$0. ', $html);
+        $text = self::text(html_entity_decode(strip_tags($html), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+        // A sentence ends at . ! ? – except dots inside dates such as "15.11.2026".
+        $chunk = '(?:[^.!?]|\.(?=\d))';
+        $pattern = '/' . $chunk . '{0,120}(?<!\pL)(privremeno\s+(zatvoren\pL*|ne\s+radi)|zatvoren\pL*\s+zbog|ne\s+radi\s+zbog)(?!\pL)' . $chunk . '{0,160}(?:\.(?!\d))?/iu';
+        if (!preg_match($pattern, $text, $m)) return '';
+        return mb_substr(trim($m[0], " .\t"), 0, 300);
+    }
+
     public static function dailyBatch(array $rows, int $minute): array
     {
         if ($minute < 0 || $minute >= self::DAILY_BATCHES) throw new \InvalidArgumentException('Invalid batch minute');
@@ -82,9 +98,9 @@ final class InaHours
     /** @param int|null $minute batch 0-59, or null for every station */
     public static function sync(?int $minute): array
     {
-        $rows = Db::all('SELECT id, name, phone, ina_url, working_hours FROM stations ORDER BY id');
+        $rows = Db::all('SELECT id, name, phone, ina_url, working_hours, ina_notice FROM stations ORDER BY id');
         $batch = $minute === null ? $rows : self::dailyBatch($rows, $minute);
-        $result = ['checked' => count($batch), 'updated' => 0, 'unchanged' => 0, 'failed' => 0, 'directoryAvailable' => true];
+        $result = ['checked' => count($batch), 'updated' => 0, 'unchanged' => 0, 'failed' => 0, 'notices' => 0, 'directoryAvailable' => true];
         $directory = [];
         try { $directory = self::parseDirectory((self::$fetch)(self::DIRECTORY_URL)); }
         catch (\Throwable) { $result['directoryAvailable'] = false; }
@@ -94,7 +110,19 @@ final class InaHours
                 $matches = array_values(array_filter($directory, fn($d) => $d['phone'] !== '' && $d['phone'] === self::phoneKey($station['phone'])));
                 $url = count($matches) === 1 ? $matches[0]['url'] : self::safeUrl($station['ina_url']);
                 if (!$url) throw new \RuntimeException('No safe station URL');
-                $hours = self::parseHours((self::$fetch)($url));
+                $html = (self::$fetch)($url);
+                // Closure wording is only FLAGGED for the admin (shown in the editor), never applied
+                // automatically: the same words could come from a site-wide banner on ina.hr.
+                // Checked before the hours, because a closed station's page may have no hours table.
+                $notice = self::closureNotice($html);
+                if ($notice !== (string) $station['ina_notice']) {
+                    Db::exec('UPDATE stations SET ina_notice = ? WHERE id = ?', [$notice, $station['id']]);
+                    if ($notice !== '') {
+                        $result['notices']++;
+                        Audit::log('ina-notice', $station['name'], $notice);
+                    }
+                }
+                $hours = self::parseHours($html);
                 $saved = json_decode((string) $station['working_hours'], true) ?: [];
                 if ($url === $station['ina_url'] && self::sameHours($saved, $hours)) { $result['unchanged']++; continue; }
                 Db::exec('UPDATE stations SET ina_url = ?, working_hours = ?, updated_at = ? WHERE id = ?',
@@ -104,7 +132,7 @@ final class InaHours
                 $result['failed']++;
             }
         }
-        if ($result['updated'] > 0) {
+        if ($result['updated'] > 0 || $result['notices'] > 0) {
             Audit::log('ina-sync', '', json_encode($result));
             Stations::publish();
         }

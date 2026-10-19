@@ -154,5 +154,72 @@ test('public page escapes station data', function () {
     eq(true, str_contains($html, '&lt;script&gt;'));
 });
 
+echo "Temporary closures\n";
+test('migrate() adds the new columns to an existing database and is re-runnable', function () {
+    Db::migrate();
+    Db::migrate();
+    $cols = array_column(Db::all('PRAGMA table_info(stations)'), 'name');
+    foreach (['status', 'status_note', 'closed_from', 'closed_until', 'ina_notice'] as $c) eq(true, in_array($c, $cols, true));
+    eq('open', Db::one("SELECT status FROM stations WHERE name = 'Babina Greda'")['status']);
+});
+test('validation: status, real dates, until not before from; reopening clears the closure', function () {
+    [$row, $err] = Stations::validate(['name' => 'x', 'status' => 'closed', 'status_note' => 'Radovi', 'closed_from' => '2026-11-03', 'closed_until' => '2026-11-10']);
+    eq([], $err); eq('closed', $row['status']); eq('Radovi', $row['status_note']);
+    eq(true, count(Stations::validate(['name' => 'x', 'status' => 'gone'])[1]) > 0);
+    eq(true, count(Stations::validate(['name' => 'x', 'status' => 'closed', 'closed_until' => '2026-02-30'])[1]) > 0);
+    eq(true, count(Stations::validate(['name' => 'x', 'status' => 'closed', 'closed_from' => '2026-11-10', 'closed_until' => '2026-11-03'])[1]) > 0);
+    [$row] = Stations::validate(['name' => 'x', 'status' => 'open', 'status_note' => 'Radovi', 'closed_until' => '2026-11-10']);
+    eq(['open', '', ''], [$row['status'], $row['status_note'], $row['closed_until']]);
+    eq('open', Stations::validate(['name' => 'x'])[0]['status']); // rows from old imports
+});
+test('closure state follows the dates (announced → closed → open again)', function () {
+    $s = ['status' => 'closed', 'closed_from' => '2026-11-03', 'closed_until' => '2026-11-10'];
+    eq('upcoming', Stations::closureState($s, '2026-11-02'));
+    eq('closed', Stations::closureState($s, '2026-11-03'));
+    eq('closed', Stations::closureState($s, '2026-11-10'));
+    eq('open', Stations::closureState($s, '2026-11-11'));
+    eq('closed', Stations::closureState(['status' => 'closed', 'closed_from' => '', 'closed_until' => ''], '2030-01-01'));
+    eq('open', Stations::closureState(['status' => 'open'], '2026-11-05'));
+});
+test('public card shows the closure badge, note and dates for the browser re-check', function () {
+    $base = ['name' => 'P', 'address' => 'A', 'postal_code' => '', 'city' => '', 'county' => '', 'phone' => '1', 'aliases' => '', 'ina_url' => '', 'working_hours' => [],
+        'status' => 'closed', 'status_note' => 'Radovi <b>', 'closed_from' => '', 'closed_until' => '2026-11-10'];
+    $html = Render::card($base, '2026-11-05');
+    eq(true, str_contains($html, 'card-closed'));
+    eq(true, str_contains($html, 'Privremeno zatvoreno do 10. 11. 2026.'));
+    eq(true, str_contains($html, 'data-until="2026-11-10"'));
+    eq(true, str_contains($html, 'Radovi &lt;b&gt;'));
+    eq(1, preg_match('/data-badge="upcoming" hidden/', $html));
+    $later = Render::card($base, '2026-11-20'); // expired: rendered, but hidden and not marked closed
+    eq(false, str_contains($later, 'card-closed'));
+    eq(1, preg_match('/data-badge="closed" hidden/', $later));
+    eq(false, str_contains(Render::card(['status' => 'open', 'status_note' => ''] + $base, '2026-11-05'), 'card-badge'));
+});
+test('summary counts stations that are closed today', function () {
+    $tpl = '{{SUMMARY}}|{{CARDS}}|{{COUNTY_OPTIONS}}|{{TOTAL}}|{{GENERATED_AT}}|{{GENERATED_HUMAN}}';
+    $row = ['name' => 'P', 'address' => 'A', 'postal_code' => '', 'city' => '', 'county' => 'Istarska županija', 'phone' => '1', 'aliases' => '', 'ina_url' => '', 'working_hours' => [],
+        'status' => 'closed', 'status_note' => '', 'closed_from' => '', 'closed_until' => ''];
+    $out = Render::index($tpl, [$row, ['status' => 'open'] + $row], '2026-11-05T10:00:00+01:00');
+    eq(true, str_starts_with($out, '2 postaja · 1 županija<span id="closed-summary"> · privremeno zatvoreno: <span id="closed-count">1</span></span>|'));
+    eq(true, str_contains(Render::index($tpl, [['status' => 'open'] + $row], '2026-11-05T10:00:00+01:00'), '<span id="closed-summary" hidden>'));
+});
+test('ina.hr closure wording is found, quoted whole and ignored in scripts', function () {
+    eq('Poštovani, postaja je PRIVREMENO ZATVORENA zbog radova', InaHours::closureNotice('<div><p>Poštovani, postaja je PRIVREMENO ZATVORENA zbog radova.</p></div>'));
+    eq('Postaja ne radi zbog radova do 15.11.2026', InaHours::closureNotice('<p>Postaja ne radi zbog radova do 15.11.2026. Hvala.</p>'));
+    eq('', InaHours::closureNotice('<script>x="privremeno zatvoreno"</script><p>Radi 0-24.</p>'));
+    eq('', InaHours::closureNotice('<p>Otvoreno 06-22.</p>'));
+});
+test('sync flags closure wording even when the page has no hours table, and clears it later', function () {
+    InaHours::$fetch = fn(string $url) => $url === InaHours::DIRECTORY_URL ? 'x' : '<p>Postaja je privremeno zatvorena zbog radova.</p>';
+    $r = InaHours::sync(0);
+    eq(1, $r['notices']); eq(1, $r['failed']); // hours could not be read, saved hours untouched
+    $row = Db::one("SELECT ina_notice, status FROM stations WHERE name = 'Babina Greda'");
+    eq('Postaja je privremeno zatvorena zbog radova', $row['ina_notice']);
+    eq('open', $row['status']); // never closed automatically
+    InaHours::$fetch = fn(string $url) => '<p>Radi.</p>';
+    InaHours::sync(0);
+    eq('', Db::one("SELECT ina_notice FROM stations WHERE name = 'Babina Greda'")['ina_notice']);
+});
+
 echo "\n$count tests, $failures failed\n";
 exit($failures ? 1 : 0);

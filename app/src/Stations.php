@@ -14,9 +14,12 @@ final class Stations
         'Vukovarsko-srijemska županija', 'Zadarska županija', 'Zagrebačka županija',
     ];
 
-    public const TEXT_FIELDS = ['name', 'address', 'phone', 'aliases', 'county', 'city', 'postal_code', 'ina_region', 'sales_area', 'ina_url'];
+    public const TEXT_FIELDS = ['name', 'address', 'phone', 'aliases', 'county', 'city', 'postal_code', 'ina_region', 'sales_area', 'ina_url',
+        'status', 'status_note', 'closed_from', 'closed_until'];
     private const MAX = ['name' => 190, 'address' => 255, 'phone' => 64, 'aliases' => 2000, 'county' => 120, 'city' => 120,
-        'postal_code' => 16, 'ina_region' => 120, 'sales_area' => 120, 'ina_url' => 255];
+        'postal_code' => 16, 'ina_region' => 120, 'sales_area' => 120, 'ina_url' => 255,
+        'status' => 16, 'status_note' => 255, 'closed_from' => 10, 'closed_until' => 10];
+    public const STATUSES = ['open', 'closed'];
     private const HOURS_KEYS = ['label', 'week', 'sat', 'sun', 'hol'];
 
     // ---- queries -------------------------------------------------------
@@ -67,6 +70,17 @@ final class Stations
         if ($row['county'] !== '' && !in_array($row['county'], self::COUNTIES, true)) $errors[] = 'Nepoznata županija.';
         if ($row['ina_url'] !== '' && InaHours::safeUrl($row['ina_url']) === null) $errors[] = 'INA poveznica mora biti oblika https://www.ina.hr/station/…/';
 
+        // Temporary closure (works, renovation…): optional note and from/until dates.
+        if ($row['status'] === '') $row['status'] = 'open';
+        if (!in_array($row['status'], self::STATUSES, true)) $errors[] = 'Nepoznat status postaje.';
+        foreach (['closed_from' => 'od', 'closed_until' => 'do'] as $f => $label) {
+            if ($row[$f] !== '' && !self::isDate($row[$f])) $errors[] = "Neispravan datum zatvaranja ($label).";
+        }
+        if ($row['closed_from'] !== '' && $row['closed_until'] !== '' && $row['closed_until'] < $row['closed_from']) {
+            $errors[] = 'Datum "do" je prije datuma "od".';
+        }
+        if ($row['status'] === 'open') $row['status_note'] = $row['closed_from'] = $row['closed_until'] = '';
+
         $hours = $in['working_hours'] ?? [];
         if (is_string($hours)) $hours = json_decode($hours, true) ?? [];
         $row['working_hours'] = [];
@@ -81,6 +95,26 @@ final class Stations
             }
         }
         return [$row, $errors];
+    }
+
+    private static function isDate(string $v): bool
+    {
+        $d = \DateTimeImmutable::createFromFormat('!Y-m-d', $v);
+        return $d !== false && $d->format('Y-m-d') === $v;
+    }
+
+    /**
+     * What a visitor should see on $today (YYYY-MM-DD): 'open', 'closed' or 'upcoming'
+     * (closure announced for a later date). An expired closure counts as open again.
+     * Mirrored in assets/js/site.js and plava-nafta/assets/admin.js, which re-check it in
+     * the browser so the page is right even on days nothing was re-published.
+     */
+    public static function closureState(array $s, string $today): string
+    {
+        if (($s['status'] ?? 'open') !== 'closed') return 'open';
+        if (($s['closed_until'] ?? '') !== '' && $today > $s['closed_until']) return 'open';
+        if (($s['closed_from'] ?? '') !== '' && $today < $s['closed_from']) return 'upcoming';
+        return 'closed';
     }
 
     public static function splitAliases(string $aliases): array
@@ -203,6 +237,8 @@ final class Stations
             'name' => $s['name'], 'address' => $s['address'], 'postal_code' => $s['postal_code'], 'city' => $s['city'],
             'county' => $s['county'], 'phone' => $s['phone'], 'aliases' => $s['aliases'],
             'ina_url' => InaHours::safeUrl($s['ina_url']) ?? '', 'working_hours' => $s['working_hours'],
+            'status' => $s['status'], 'status_note' => $s['status_note'],
+            'closed_from' => $s['closed_from'], 'closed_until' => $s['closed_until'],
         ], self::all());
     }
 

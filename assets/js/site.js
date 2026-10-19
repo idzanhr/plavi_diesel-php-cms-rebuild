@@ -58,18 +58,49 @@
   function norm(s) {
     return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/g, "d");
   }
+  // Temporary closures: re-check the dates against today (Zagreb time), so a closure
+  // starts and ends on the right day even if nothing was re-published since.
+  // Same rule as Stations::closureState() in PHP.
+  var today = (function () {
+    try { return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Zagreb" }).format(new Date()); }
+    catch (e) { return new Date().toISOString().slice(0, 10); }
+  })();
+  function closureState(el) {
+    if (el.getAttribute("data-status") !== "closed") return "open";
+    var from = el.getAttribute("data-from"), until = el.getAttribute("data-until");
+    if (until && today > until) return "open";
+    if (from && today < from) return "upcoming";
+    return "closed";
+  }
+
   var cards = Array.prototype.map.call(list.querySelectorAll(".card"), function (el) {
-    return { el: el, county: el.getAttribute("data-county"), text: norm(el.getAttribute("data-search") || "") };
+    var state = closureState(el);
+    if (el.hasAttribute("data-status")) {
+      el.classList.toggle("card-closed", state === "closed");
+      el.querySelectorAll("[data-badge]").forEach(function (b) {
+        var kind = b.getAttribute("data-badge");
+        b.hidden = kind === "note" ? state === "open" : kind !== state;
+      });
+    }
+    return { el: el, county: el.getAttribute("data-county"), closed: state === "closed", text: norm(el.getAttribute("data-search") || "") };
   });
+  var closedNow = cards.filter(function (c) { return c.closed; }).length;
+  var closedSummary = document.getElementById("closed-summary");
+  if (closedSummary) {
+    closedSummary.hidden = closedNow === 0;
+    document.getElementById("closed-count").textContent = closedNow;
+  }
+  var onlyOpen = document.getElementById("only-open");
   var shown = document.getElementById("shown");
   var empty = document.getElementById("empty");
 
   function filter() {
     var n = norm(q.value.trim());
     var c = county.value;
+    var open = onlyOpen && onlyOpen.checked;
     var count = 0;
     cards.forEach(function (card) {
-      var ok = (!c || card.county === c) && (!n || card.text.indexOf(n) !== -1);
+      var ok = (!c || card.county === c) && (!n || card.text.indexOf(n) !== -1) && !(open && card.closed);
       card.el.hidden = !ok;
       if (ok) count++;
     });
@@ -78,6 +109,7 @@
     var params = new URLSearchParams();
     if (q.value.trim()) params.set("q", q.value.trim());
     if (c) params.set("zupanija", c);
+    if (open) params.set("otvorene", "1");
     var qs = params.toString();
     history.replaceState(null, "", qs ? "?" + qs : location.pathname);
   }
@@ -86,7 +118,9 @@
   var initial = new URLSearchParams(location.search);
   if (initial.get("q")) q.value = initial.get("q");
   if (initial.get("zupanija")) county.value = initial.get("zupanija");
+  if (onlyOpen && initial.get("otvorene") === "1") onlyOpen.checked = true;
   q.addEventListener("input", filter);
   county.addEventListener("change", filter);
-  if (q.value || county.value) filter();
+  if (onlyOpen) onlyOpen.addEventListener("change", filter);
+  if (q.value || county.value || (onlyOpen && onlyOpen.checked)) filter();
 })();

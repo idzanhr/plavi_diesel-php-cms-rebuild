@@ -53,6 +53,26 @@
   function fail(err) { toast(err.message, true); }
   function input(attrs) { return h("input", Object.assign({ class: "input" }, attrs)); }
   function field(label, control, cls) { return h("label", { class: "field " + (cls || "") }, h("span", { text: label }), control); }
+  // Same rule as Stations::closureState() in PHP / site.js.
+  var today = (function () {
+    try { return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Zagreb" }).format(new Date()); }
+    catch (e) { return new Date().toISOString().slice(0, 10); }
+  })();
+  function closureState(s) {
+    if (s.status !== "closed") return "open";
+    if (s.closed_until && today > s.closed_until) return "expired";
+    if (s.closed_from && today < s.closed_from) return "upcoming";
+    return "closed";
+  }
+  function hrDate(ymd) { var p = (ymd || "").split("-"); return p.length === 3 ? (+p[2]) + ". " + (+p[1]) + ". " + p[0] + "." : ""; }
+  function statusBadge(s) {
+    var st = closureState(s), until = s.closed_until ? " do " + hrDate(s.closed_until) : "";
+    if (st === "closed") return h("span", { class: "card-badge badge-closed", text: "Privremeno zatvoreno" + until });
+    if (st === "upcoming") return h("span", { class: "card-badge badge-upcoming", text: "Zatvaranje od " + hrDate(s.closed_from) + until });
+    if (st === "expired") return h("span", { class: "card-badge badge-upcoming", text: "Zatvaranje isteklo " + hrDate(s.closed_until) + " – provjerite i označite kao otvorenu" });
+    return null;
+  }
+
   var qrReady;
   function loadQr() {
     qrReady = qrReady || boot.qrScripts.reduce(function (p, src) {
@@ -96,23 +116,34 @@
     var list = h("div", { class: "rows" });
     var formSlot = h("div");
     var count = h("p", { class: "muted small" });
+    var which = h("select", { class: "input toolbar-filter", "aria-label": "Prikaz", onchange: function (e) { state.which = e.target.value; renderList(); } },
+      h("option", { value: "" }, "Sve postaje"),
+      h("option", { value: "closed", selected: state.which === "closed" }, "Privremeno zatvorene / najavljene"),
+      h("option", { value: "notice", selected: state.which === "notice" }, "Napomena s INA.hr za provjeru"));
     view.replaceChildren(
-      h("div", { class: "toolbar" }, search, h("button", { class: "btn-primary", type: "button", onclick: function () { state.editing = "new"; renderList(); } }, "+ Nova postaja")),
+      h("div", { class: "toolbar" }, search, which, h("button", { class: "btn-primary", type: "button", onclick: function () { state.editing = "new"; renderList(); } }, "+ Nova postaja")),
       count, formSlot, list
     );
     function renderList() {
       var n = norm(state.q.trim());
       var shown = state.stations.filter(function (s) {
-        return !n || norm([s.name, s.aliases, s.county, s.city, s.address, s.phone].join(" ")).indexOf(n) !== -1;
+        if (state.which === "closed" && s.status !== "closed") return false;
+        if (state.which === "notice" && !s.ina_notice) return false;
+        return !n || norm([s.name, s.aliases, s.county, s.city, s.address, s.phone, s.status_note].join(" ")).indexOf(n) !== -1;
       });
-      count.textContent = "Ukupno: " + state.stations.length + " · prikazano: " + shown.length;
+      var notices = state.stations.filter(function (s) { return s.ina_notice; }).length;
+      count.textContent = "Ukupno: " + state.stations.length + " · prikazano: " + shown.length
+        + (notices ? " · napomena s INA.hr za provjeru: " + notices : "");
       formSlot.replaceChildren(state.editing === "new" ? stationForm(null, done) : "");
       list.replaceChildren.apply(list, shown.map(function (s) {
         if (state.editing === s.id) return h("div", { class: "row editing" }, stationForm(s, done));
         return h("div", { class: "row" },
           h("div", { class: "row-main" },
             h("p", { class: "row-title" }, s.name, " ", h("span", { class: "muted small", text: "· " + (s.county || "bez županije") })),
-            h("p", { class: "muted small truncate", text: s.aliases ? "Nadimci: " + s.aliases : "Bez nadimaka" })),
+            h("p", { class: "muted small truncate", text: s.aliases ? "Nadimci: " + s.aliases : "Bez nadimaka" }),
+            statusBadge(s),
+            s.ina_notice ? h("p", { class: "ina-notice", title: "Pronađeno na ina.hr pri automatskoj provjeri. Provjerite i po potrebi označite postaju kao privremeno zatvorenu." },
+              "⚠ INA.hr: " + s.ina_notice) : null),
           h("button", { class: "btn-ghost", type: "button", onclick: function () { state.editing = s.id; renderList(); } }, "Uredi"),
           h("button", { class: "btn-danger", type: "button", onclick: function () { del(s); } }, "Obriši"));
       }));
@@ -130,7 +161,9 @@
   }
 
   function stationForm(s, onDone) {
-    var f = s ? JSON.parse(JSON.stringify(s)) : { name: "", address: "", city: "", postal_code: "", phone: "", county: "", aliases: "", ina_url: "", ina_region: "", sales_area: "", working_hours: [] };
+    var f = s ? JSON.parse(JSON.stringify(s)) : { name: "", address: "", city: "", postal_code: "", phone: "", county: "", aliases: "", ina_url: "", ina_region: "", sales_area: "", working_hours: [],
+      status: "open", status_note: "", closed_from: "", closed_until: "" };
+    f.status = f.status || "open";
     var aliases = f.aliases.split("/").map(function (a) { return a.trim(); }).filter(Boolean);
     function bind(key, attrs) {
       return input(Object.assign({ value: f[key], oninput: function (e) { f[key] = e.target.value; } }, attrs || {}));
@@ -165,6 +198,22 @@
     }
     renderHours();
 
+    // Temporary closure (works on the station, renovation…)
+    var closedFields = h("div", { class: "status-fields" },
+      field("Napomena (vidljiva na stranici)", bind("status_note", { maxlength: 255, placeholder: "npr. Radovi na postaji" })),
+      field("Od (prazno = odmah)", bind("closed_from", { type: "date" })),
+      field("Do (prazno = do daljnjeg)", bind("closed_until", { type: "date" })));
+    function syncStatus() { closedFields.hidden = f.status !== "closed"; }
+    var statusSel = h("select", { class: "input", onchange: function (e) { f.status = e.target.value; syncStatus(); } },
+      h("option", { value: "open", selected: f.status !== "closed" }, "Otvorena"),
+      h("option", { value: "closed", selected: f.status === "closed" }, "Privremeno zatvorena"));
+    var statusBox = h("div", { class: "span2 status-box" },
+      h("p", { class: "label", text: "Status postaje" }),
+      s && s.ina_notice ? h("p", { class: "ina-notice", text: "⚠ Na ina.hr piše: " + s.ina_notice }) : null,
+      statusSel, closedFields,
+      h("p", { class: "muted small", text: "Zatvorena postaja ostaje na popisu s oznakom, a posjetitelji je mogu sakriti filtrom „Samo otvorene”. Nakon datuma „do” oznaka sama nestaje." }));
+    syncStatus();
+
     var saveBtn = h("button", { class: "btn-primary", type: "submit" }, "Spremi i objavi");
     var form = h("form", { class: "station-form", onsubmit: function (e) {
       e.preventDefault();
@@ -180,6 +229,7 @@
       field("Telefon", bind("phone", { type: "tel" })),
       field("Županija", county),
       field("INA.hr poveznica", bind("ina_url", { type: "url", placeholder: "https://www.ina.hr/station/…/" }), "span2"),
+      statusBox,
       h("div", { class: "span2" }, h("p", { class: "label", text: "Kako znaju zvati postaju" }), chips,
         h("div", { class: "inline" }, newAlias, h("button", { type: "button", class: "btn-ghost", onclick: addAlias }, "Dodaj"))),
       h("div", { class: "span2" }, h("p", { class: "label", text: "Radno vrijeme" }),
@@ -229,7 +279,7 @@
 
   // ---- audit log
   var ACTIONS = { create: "Dodano", update: "Izmijenjeno", "delete": "Obrisano", "import": "Uvoz", publish: "Objava", password: "Promjena lozinke",
-    "recovery-codes": "Novi rezervni kodovi", "totp-rotate": "Nova 2FA aplikacija", "ina-sync": "INA radno vrijeme" };
+    "recovery-codes": "Novi rezervni kodovi", "totp-rotate": "Nova 2FA aplikacija", "ina-sync": "INA radno vrijeme", "ina-notice": "INA.hr: napomena o zatvaranju", "totp-reset": "2FA resetirana (CLI)" };
   function viewAudit() {
     view.replaceChildren(h("p", { class: "muted", text: "Učitavanje…" }));
     api("audit").then(function (d) {
