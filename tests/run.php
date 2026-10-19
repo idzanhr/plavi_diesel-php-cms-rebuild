@@ -148,6 +148,13 @@ test('CSV import (semicolon, BOM) and export round trip', function () {
     [$c, $u, $e] = Stations::import($csv, 'x.csv');
     eq([0, 2, []], [$c, $u, $e]);
 });
+test('map link searches INA + name + address on Google Maps, escaped', function () {
+    eq('https://www.google.com/maps/search/?api=1&query=INA%20Barban%2C%20Barban%20106%2FD%2C%2052207%20Barban%2C%20Hrvatska',
+        Render::mapUrl(['name' => 'Barban', 'address' => 'Barban 106/D', 'postal_code' => '52207', 'city' => 'Barban']));
+    eq('https://www.google.com/maps/search/?api=1&query=INA%20%C4%8Cazma%2C%20Hrvatska', Render::mapUrl(['name' => 'Čazma', 'address' => '', 'postal_code' => '', 'city' => '']));
+    $html = Render::card(['name' => 'A"<b>', 'address' => 'x', 'postal_code' => '', 'city' => '', 'county' => '', 'phone' => '', 'aliases' => '', 'ina_url' => '', 'working_hours' => []]);
+    eq(true, str_contains($html, 'target="_blank" rel="noopener noreferrer" aria-label="Karta: A&quot;&lt;b&gt; (Google Karte, nova kartica)">Karta ↗</a>'));
+});
 test('public page escapes station data', function () {
     $html = Render::card(['name' => '<script>x</script>', 'address' => '"a"', 'postal_code' => '', 'city' => '', 'county' => '', 'phone' => '1', 'aliases' => '', 'ina_url' => '', 'working_hours' => []]);
     eq(false, str_contains($html, '<script>'));

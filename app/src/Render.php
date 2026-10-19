@@ -66,6 +66,17 @@ final class Render
         return $ymd === '' ? '' : date('j. n. Y.', strtotime($ymd));
     }
 
+    /**
+     * Google Maps search for the station ("INA <name>, <address>, <postal> <city>, Hrvatska"):
+     * a plain link, so no map or third-party script is loaded on the page itself.
+     */
+    public static function mapUrl(array $s): string
+    {
+        $place = trim(($s['postal_code'] ?? '') . ' ' . ($s['city'] ?? ''));
+        $query = implode(', ', array_filter(['INA ' . $s['name'], $s['address'] ?? '', $place, 'Hrvatska'], fn($p) => trim($p) !== ''));
+        return 'https://www.google.com/maps/search/?api=1&query=' . rawurlencode($query);
+    }
+
     public static function card(array $s, ?string $today = null): string
     {
         $status = $s['status'] ?? 'open';
@@ -118,6 +129,8 @@ final class Render
         $h .= '<div class="card-actions">';
         if ($s['phone'] !== '') $h .= '<a class="btn-phone" href="tel:' . self::e($tel) . '">☎ ' . self::e($s['phone']) . '</a>';
         if ($s['ina_url'] !== '') $h .= '<a class="btn-link" href="' . self::e($s['ina_url']) . '" target="_blank" rel="noopener noreferrer">INA.hr ↗</a>';
+        $h .= '<a class="btn-link" href="' . self::e(self::mapUrl($s)) . '" target="_blank" rel="noopener noreferrer"'
+            . ' aria-label="Karta: ' . self::e($s['name']) . ' (Google Karte, nova kartica)">Karta ↗</a>';
         $h .= '</div></article>';
         return $h;
     }

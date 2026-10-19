@@ -176,6 +176,15 @@ and counted next to "Prikazano".
 * Temporarily closed stations show the red closure badge instead of a bubble.
 * Logic: `assets/js/hours.js` (shared by the page and `tests/hours.test.js`).
 
+## Sorting and map link
+
+* **Redoslijed**: *Naziv A–Ž* (default), *Naziv Ž–A*, *Po županiji*, in the Croatian alphabet
+  (C < Č < Ć < D < Dž < Đ … L < Lj, N < Nj, S < Š, Z < Ž) via `Intl.Collator("hr")`, the same order PHP's
+  `Collator("hr_HR")` uses when publishing. Kept in shared links (`?redoslijed=za|zupanija`).
+* **Karta ↗** on every card opens Google Maps in a new tab, searching "INA <name>, <address>, <postal city>, Hrvatska",
+  to see roughly where a place is. No map or Google script is loaded on the site itself; Google only gets the query
+  when someone clicks (mentioned in the privacy policy).
+
 ## Accessibility (WCAG 2.2 AA)
 
 * Colour is never the only cue: every bubble and badge says it in words (+ a dot).

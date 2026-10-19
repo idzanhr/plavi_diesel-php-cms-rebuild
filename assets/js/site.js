@@ -82,7 +82,8 @@
         b.hidden = kind === "note" ? state === "open" : kind !== state;
       });
     }
-    return { el: el, county: el.getAttribute("data-county"), closed: state === "closed", text: norm(el.getAttribute("data-search") || "") };
+    var title = el.querySelector(".card-title");
+    return { el: el, name: title ? title.textContent : "", county: el.getAttribute("data-county"), closed: state === "closed", text: norm(el.getAttribute("data-search") || "") };
   });
   var closedNow = cards.filter(function (c) { return c.closed; }).length;
   var closedSummary = document.getElementById("closed-summary");
@@ -113,6 +114,22 @@
   }
   updateNow();
 
+  // ---- order: Croatian alphabet (Č, Ć, Dž, Đ, Lj, Nj, Š, Ž in their proper places)
+  var sort = document.getElementById("sort");
+  var collator;
+  try { collator = new Intl.Collator("hr", { sensitivity: "base", numeric: true }); }
+  catch (e) { collator = { compare: function (a, b) { return a < b ? -1 : a > b ? 1 : 0; } }; }
+  function applyOrder() {
+    var mode = sort ? sort.value : "";
+    var ordered = cards.slice().sort(function (a, b) {
+      if (mode === "zupanija") return collator.compare(a.county || "\uffff", b.county || "\uffff") || collator.compare(a.name, b.name);
+      return mode === "za" ? collator.compare(b.name, a.name) : collator.compare(a.name, b.name);
+    });
+    var frag = document.createDocumentFragment();
+    ordered.forEach(function (c) { frag.appendChild(c.el); });
+    list.appendChild(frag);
+  }
+
   var show = document.getElementById("show");
   var shown = document.getElementById("shown");
   var empty = document.getElementById("empty");
@@ -140,6 +157,7 @@
     if (q.value.trim()) params.set("q", q.value.trim());
     if (c) params.set("zupanija", c);
     if (mode) params.set("prikaz", mode === "now" ? "sada" : "otvorene");
+    if (sort && sort.value) params.set("redoslijed", sort.value);
     var qs = params.toString();
     history.replaceState(null, "", qs ? "?" + qs : location.pathname);
   }
@@ -153,9 +171,14 @@
     show.value = p === "sada" ? "now" : (p === "otvorene" || initial.get("otvorene") === "1") ? "open" : "";
     show.addEventListener("change", filter);
   }
+  if (sort) {
+    var r = initial.get("redoslijed");
+    if (r === "za" || r === "zupanija") { sort.value = r; applyOrder(); }
+    sort.addEventListener("change", function () { applyOrder(); filter(); });
+  }
   q.addEventListener("input", filter);
   county.addEventListener("change", filter);
-  if (q.value || county.value || (show && show.value)) filter();
+  if (q.value || county.value || (show && show.value) || (sort && sort.value)) filter();
 
   function refresh() {
     updateNow();

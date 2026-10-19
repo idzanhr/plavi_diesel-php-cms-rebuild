@@ -47,6 +47,12 @@
         <option value="now">Sada rade</option>
         <option value="open">Bez privremeno zatvorenih</option>
       </select>
+      <label class="sr-only" for="sort">Redoslijed</label>
+      <select id="sort">
+        <option value="">Naziv A–Ž</option>
+        <option value="za">Naziv Ž–A</option>
+        <option value="zupanija">Po županiji</option>
+      </select>
     </form>
 
     <p class="muted small" aria-live="polite">Prikazano: <span id="shown">{{TOTAL}}</span><span id="hidden-unknown" hidden></span></p>

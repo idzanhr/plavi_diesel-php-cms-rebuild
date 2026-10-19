@@ -100,8 +100,9 @@ button, input, select, textarea { font: inherit; color: inherit; }
 
 /* filters */
 .filters { display: flex; flex-direction: column; gap: .75rem; margin-bottom: 1.5rem; }
-@media (min-width: 768px) { .filters { flex-direction: row; } }
-.filters input[type=search] { flex: 1; }
+@media (min-width: 768px) { .filters { flex-direction: row; flex-wrap: wrap; } .filters select { flex: 1 1 12rem; } }
+.filters input[type=search] { flex: 1 1 100%; }
+@media (min-width: 1024px) { .filters input[type=search] { flex: 2 1 18rem; } }
 .filters input[type=search], .filters select { border: 1px solid var(--input); border-radius: .5rem; background: var(--card); padding: .75rem 1rem; outline: none; min-width: 0; }
 :is(input, select, textarea, button, a):focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 
