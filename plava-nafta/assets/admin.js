@@ -142,6 +142,7 @@
             h("p", { class: "row-title" }, s.name, " ", h("span", { class: "muted small", text: "· " + (s.county || "bez županije") })),
             h("p", { class: "muted small truncate", text: s.aliases ? "Nadimci: " + s.aliases : "Bez nadimaka" }),
             statusBadge(s),
+            s.blue_price ? h("p", { class: "muted small", text: (s.blue_price_name || "Plavi dizel") + ": " + s.blue_price.replace(".", ",") + " € · ina.hr " + hrDate((s.blue_price_at || "").slice(0, 10)) }) : null,
             s.ina_notice ? h("p", { class: "ina-notice", title: "Pronađeno na ina.hr pri automatskoj provjeri. Provjerite i po potrebi označite postaju kao privremeno zatvorenu." },
               "⚠ INA.hr: " + s.ina_notice) : null),
           h("button", { class: "btn-ghost", type: "button", onclick: function () { state.editing = s.id; renderList(); } }, "Uredi"),

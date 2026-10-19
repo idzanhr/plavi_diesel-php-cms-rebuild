@@ -65,6 +65,9 @@ final class Db
             'closed_until' => "VARCHAR(10) NOT NULL DEFAULT ''",       // YYYY-MM-DD, empty = until further notice
             'ina_notice'   => "VARCHAR(500) NOT NULL DEFAULT ''",      // closure wording found on ina.hr (sync)
             'status_source' => "VARCHAR(8) NOT NULL DEFAULT ''",       // who closed it: admin | ina (auto, from the hours table)
+            'blue_price'    => "VARCHAR(16) NOT NULL DEFAULT ''",      // blue diesel €/l from ina.hr, e.g. 1.43
+            'blue_price_name' => "VARCHAR(80) NOT NULL DEFAULT ''",    // the name INA uses, e.g. Eurodiesel plavi
+            'blue_price_at' => "VARCHAR(19) NOT NULL DEFAULT ''",      // when it was picked up (Y-m-d H:i:s)
         ],
     ];
 

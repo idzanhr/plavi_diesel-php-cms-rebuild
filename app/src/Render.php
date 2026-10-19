@@ -52,12 +52,43 @@ final class Render
 
         return strtr($template, [
             '{{SUMMARY}}' => $summary,
+            '{{PRICE_BANNER}}' => self::priceBanner($rows),
             '{{CARDS}}' => implode("\n", array_map(fn($s) => self::card($s, $today), $rows)),
             '{{TOTAL}}' => (string) count($rows),
             '{{COUNTY_OPTIONS}}' => $options,
             '{{GENERATED_AT}}' => self::e($generatedAt),
             '{{GENERATED_HUMAN}}' => self::e(date('j. n. Y. H:i', strtotime($generatedAt))),
         ]);
+    }
+
+    /** "1.43" → "1,43 €" */
+    public static function euro(string $price): string
+    {
+        return number_format((float) $price, 2, ',', '.') . ' €';
+    }
+
+    /**
+     * Banner at the top: the blue diesel price picked up from ina.hr, with the date. One price when
+     * all stations agree, otherwise the range. Names vary by station, so all variants are listed.
+     */
+    public static function priceBanner(array $rows): string
+    {
+        $priced = array_filter($rows, fn($s) => ($s['blue_price'] ?? '') !== '');
+        if (!$priced) return '';
+        $prices = array_map(fn($s) => (float) $s['blue_price'], $priced);
+        $min = min($prices); $max = max($prices);
+        $latest = max(array_column($priced, 'blue_price_at'));
+        // Each price stays on one line together with its unit (no "/ l" alone on a phone).
+        $unit = ' <span class="price-unit">/ l</span>';
+        $value = $min === $max
+            ? '<span class="nw">' . self::e(self::euro((string) $min)) . $unit . '</span>'
+            : '<span class="nw">' . self::e(self::euro((string) $min)) . '</span> – <span class="nw">' . self::e(self::euro((string) $max)) . $unit . '</span>';
+        return '<section class="price-banner" aria-labelledby="price-title">'
+            . '<h2 id="price-title" class="price-title">Cijena plavog dizela</h2>'
+            . '<p class="price-value">' . $value . '</p>'
+            . '<p class="price-meta">Preuzeto s ina.hr ' . self::e(self::date(substr($latest, 0, 10)) . ' u ' . substr($latest, 11, 5))
+            . ($min === $max ? '' : ' · cijena se razlikuje po postajama, vidi karticu postaje')
+            . '</p><p class="price-names">Eurodiesel plavi · plavi diesel · plavi dizel · plava nafta</p></section>';
     }
 
     /** 15. 11. 2026. */
@@ -105,6 +136,11 @@ final class Render
         }
         $h .= '<h2 class="card-title">' . self::e($s['name']) . '</h2>';
         $h .= '<p class="now" data-now hidden></p>';
+        if (($s['blue_price'] ?? '') !== '') {
+            $h .= '<p class="card-price"><span class="price-name">' . self::e($s['blue_price_name'] ?: 'Plavi dizel') . '</span> '
+                . '<b>' . self::e(self::euro($s['blue_price'])) . '</b>'
+                . ' <span class="price-date">ina.hr, ' . self::e(self::date(substr($s['blue_price_at'], 0, 10))) . '</span></p>';
+        }
         $h .= '<p class="card-address">' . self::e($place) . '</p>';
         if ($s['aliases'] !== '') {
             $h .= '<p class="card-aliases"><span>Zovu je: </span>' . self::e($s['aliases']) . '</p>';

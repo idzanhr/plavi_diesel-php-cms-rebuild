@@ -253,6 +253,7 @@ final class Stations
             'name' => $s['name'], 'address' => $s['address'], 'postal_code' => $s['postal_code'], 'city' => $s['city'],
             'county' => $s['county'], 'phone' => $s['phone'], 'aliases' => $s['aliases'],
             'ina_url' => InaHours::safeUrl($s['ina_url']) ?? '', 'working_hours' => $s['working_hours'],
+            'blue_price' => $s['blue_price'] ?? '', 'blue_price_name' => $s['blue_price_name'] ?? '', 'blue_price_at' => $s['blue_price_at'] ?? '',
             'status' => $s['status'], 'status_note' => $s['status_note'],
             'closed_from' => $s['closed_from'], 'closed_until' => $s['closed_until'],
         ], self::all());

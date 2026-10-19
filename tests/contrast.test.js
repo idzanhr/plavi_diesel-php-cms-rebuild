@@ -58,6 +58,8 @@ const PAIRS = [
   ["open-fg", "open-bg", 4.5, "'Sada radi' bubble"],
   ["shut-fg", "shut-bg", 4.5, "'Sada ne radi' bubble"],
   ["unknown-fg", "unknown-bg", 4.5, "'Provjerite radno vrijeme' bubble"],
+  ["price-fg", "price-bg", 4.5, "blue diesel price banner + card line"],
+  ["price-accent", "price-bg", 3, "price banner border / card accent (1.4.11)"],
   ["input", "card", 3, "input / select border (1.4.11)"],
   ["input", "background", 3, "input border on page (1.4.11)"],
   ["ring", "background", 3, "focus outline (1.4.11)"],

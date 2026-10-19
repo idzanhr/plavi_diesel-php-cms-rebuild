@@ -382,5 +382,42 @@ test('a failing purge never blocks a save; it is written to the Dnevnik', functi
     PlavaNafta\Config::load(require __DIR__ . '/config.test.php');
 });
 
+echo "Blue diesel price (\"Goriva u ponudi\")\n";
+// Same list as https://www.ina.hr/station/babina-greda-2/
+$fuels = '<nav><ul><li>O kompaniji</li><li>Kupci</li></ul></nav><h3>Goriva u ponudi</h3><ul><li>Eurodiesel plavi - 1,43 €</li>'
+    . '<li>Eurosuper 95 Class Plus - 1,73 €</li><li>Eurodiesel Class Plus - 1,87 €</li><li>Eurodiesel Class Plus Premium - 2,12 €</li></ul>';
+test('picks the blue diesel line, whatever INA calls it', function () use ($fuels) {
+    eq(['name' => 'Eurodiesel plavi', 'price' => '1.43'], InaHours::bluePrice($fuels));
+    eq(['name' => 'Plava nafta', 'price' => '1.45'], InaHours::bluePrice('<ul><li>Eurodiesel - 1,87 €</li><li>Plava nafta – 1.45 EUR</li></ul>'));
+    eq(['name' => 'Plavi dizel', 'price' => '1.43'], InaHours::bluePrice('<ul><li>Plavi dizel: 1,430 €</li></ul>'));
+    eq(['name' => 'Eurosuper plavi', 'price' => '1.44'], InaHours::bluePrice('<ul><li>Eurosuper plavi - 1,44 €</li></ul>'));
+    eq(null, InaHours::bluePrice('<ul><li>Eurodiesel Class Plus - 1,87 €</li></ul>'));
+    eq(null, InaHours::bluePrice('<ul><li>Plavi diesel - 143 €</li></ul>')); // not a believable €/l price
+});
+test('sync stores the price with the time it was picked up; a page without one keeps it', function () use ($fuels, $hoursPage) {
+    InaHours::$fetch = fn(string $u) => $u === 'https://www.ina.hr/station/murter/' ? $hoursPage('06-22') . $fuels : throw new RuntimeException('HTTP 404');
+    $r = InaHours::sync(null, 'Murter');
+    eq(1, $r['prices']);
+    $m = Db::one("SELECT blue_price, blue_price_name, blue_price_at FROM stations WHERE name = 'Murter'");
+    eq(['1.43', 'Eurodiesel plavi'], [$m['blue_price'], $m['blue_price_name']]);
+    eq(date('Y-m-d'), substr($m['blue_price_at'], 0, 10));
+    InaHours::$fetch = fn(string $u) => $u === 'https://www.ina.hr/station/murter/' ? $hoursPage('06-22') : throw new RuntimeException('HTTP 404');
+    eq(0, InaHours::sync(null, 'Murter')['prices']);
+    eq('1.43', Db::one("SELECT blue_price FROM stations WHERE name = 'Murter'")['blue_price']);
+});
+test('banner shows one price or the range, with the date; card shows its own price', function () {
+    $row = fn($p, $at) => ['name' => 'X', 'address' => '', 'postal_code' => '', 'city' => '', 'county' => '', 'phone' => '', 'aliases' => '', 'ina_url' => '', 'working_hours' => [],
+        'blue_price' => $p, 'blue_price_name' => 'Eurodiesel <plavi>', 'blue_price_at' => $at];
+    $one = Render::priceBanner([$row('1.43', '2026-10-19 08:05:00'), $row('1.43', '2026-10-20 04:12:00'), $row('', '')]);
+    eq(true, str_contains($one, '<p class="price-value"><span class="nw">1,43 € <span class="price-unit">/ l</span></span></p>'));
+    eq(true, str_contains($one, 'Preuzeto s ina.hr 20. 10. 2026. u 04:12'));
+    $range = Render::priceBanner([$row('1.43', '2026-10-20 04:00:00'), $row('1.47', '2026-10-20 04:00:00')]);
+    eq(true, str_contains($range, '<span class="nw">1,43 €</span> – <span class="nw">1,47 € <span class="price-unit">/ l</span></span>'));
+    eq('', Render::priceBanner([$row('', '')]));
+    $card = Render::card($row('1.43', '2026-10-20 04:12:00'));
+    eq(true, str_contains($card, '<span class="price-name">Eurodiesel &lt;plavi&gt;</span> <b>1,43 €</b> <span class="price-date">ina.hr, 20. 10. 2026.</span>'));
+    eq(false, str_contains(Render::card($row('', '')), 'card-price'));
+});
+
 echo "\n$count tests, $failures failed\n";
 exit($failures ? 1 : 0);

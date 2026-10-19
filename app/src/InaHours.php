@@ -131,6 +131,28 @@ final class InaHours
         return mb_substr(trim($m[0], " .\t"), 0, 300);
     }
 
+    /**
+     * Blue diesel price from the "Goriva u ponudi" list of a station page
+     * ("Eurodiesel plavi - 1,43 €"). Any fuel whose name contains "plav…" counts
+     * (Eurodiesel plavi, Plavi diesel/dizel, Plava nafta, Eurosuper plavi).
+     * @return array{name: string, price: string}|null price as "1.43"
+     */
+    public static function bluePrice(string $html): ?array
+    {
+        $xp = self::xpath($html);
+        foreach ($xp->query('//li | //tr | //p') as $node) {
+            $text = self::text($node->textContent);
+            if (mb_strlen($text) > 120) continue; // a whole paragraph of text, not a price line
+            if (!preg_match('/^(.{2,60}?)\s*[-–—:]\s*(\d{1,2}[.,]\d{2,3})\s*(?:€|EUR\b)/iu', $text, $m)) continue;
+            $name = trim($m[1]);
+            if (!preg_match('/plav/iu', $name)) continue;
+            $price = (float) str_replace(',', '.', $m[2]);
+            if ($price < 0.3 || $price > 5) continue; // not a believable €/l price
+            return ['name' => $name, 'price' => number_format($price, 2, '.', '')];
+        }
+        return null;
+    }
+
     public static function dailyBatch(array $rows, int $minute): array
     {
         if ($minute < 0 || $minute >= self::DAILY_BATCHES) throw new \InvalidArgumentException('Invalid batch minute');
@@ -163,13 +185,13 @@ final class InaHours
      */
     public static function sync(?int $minute, ?string $only = null, ?callable $log = null): array
     {
-        $rows = Db::all('SELECT id, name, phone, ina_url, working_hours, ina_notice, status, status_source FROM stations ORDER BY id');
+        $rows = Db::all('SELECT id, name, phone, ina_url, working_hours, ina_notice, status, status_source, blue_price FROM stations ORDER BY id');
         if ($only !== null) {
             $rows = array_values(array_filter($rows, fn($r) => mb_strtolower($r['name']) === mb_strtolower(trim($only)) || (string) $r['id'] === $only));
         }
         $batch = $minute === null || $only !== null ? $rows : self::dailyBatch($rows, $minute);
         $result = ['checked' => count($batch), 'updated' => 0, 'unchanged' => 0, 'failed' => 0, 'notices' => 0,
-            'closed' => 0, 'reopened' => 0, 'directoryAvailable' => true];
+            'closed' => 0, 'reopened' => 0, 'prices' => 0, 'directoryAvailable' => true];
         $log ??= fn(string $line) => null;
         $directory = [];
         try { $directory = self::parseDirectory((self::$fetch)(self::DIRECTORY_URL)); }
@@ -179,7 +201,8 @@ final class InaHours
             try { self::syncStation($station, $directory, $result, $log); }
             catch (\Throwable $e) { $result['failed']++; $log($station['name'] . ': ' . $e->getMessage()); }
         }
-        if ($result['updated'] + $result['notices'] + $result['closed'] + $result['reopened'] > 0) {
+        // Prices are re-published every time they are picked up, so the date on the site stays current.
+        if ($result['updated'] + $result['notices'] + $result['closed'] + $result['reopened'] + $result['prices'] > 0) {
             Audit::log('ina-sync', $only ?? '', json_encode($result));
             Stations::publish();
         }
@@ -200,6 +223,17 @@ final class InaHours
         if ($hours === null && $firstHtml) { $html = $firstHtml['html']; $url = $firstHtml['url']; }
         if ($html === null) throw new \RuntimeException('stranica na ina.hr nije pronađena (' . ($tried ? implode('; ', $tried) : 'nema kandidata') . ')');
         $closedByIna = $hours !== null && self::hoursClosed($hours);
+
+        // 0. Blue diesel price ("Goriva u ponudi"). Stored with the time it was picked up; a page
+        //    without a price leaves the last known one (its date then shows how old it is).
+        if ($price = self::bluePrice($html)) {
+            Db::exec('UPDATE stations SET blue_price = ?, blue_price_name = ?, blue_price_at = ? WHERE id = ?',
+                [$price['price'], mb_substr($price['name'], 0, 80), Db::now(), $station['id']]);
+            $result['prices']++;
+            if ($price['price'] !== (string) $station['blue_price']) {
+                $log("{$station['name']}: {$price['name']} " . str_replace('.', ',', $price['price']) . ' €');
+            }
+        }
 
         // 1. Notice for the admin. The hours table saying "PRIVREMENO ZATVORENO" every day is
         //    INA's own signal; any other closure wording on the page is only flagged, because it

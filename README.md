@@ -239,6 +239,19 @@ and counted next to "Prikazano".
 * Temporarily closed stations show the red closure badge instead of a bubble.
 * Logic: `assets/js/hours.js` (shared by the page and `tests/hours.test.js`).
 
+## Blue diesel price
+
+The ina.hr sync also reads each station's **"Goriva u ponudi"** list (e.g. `Eurodiesel plavi - 1,43 €`). Any fuel
+whose name contains *plav…* counts – Eurodiesel plavi, Plavi diesel/dizel, Plava nafta, Eurosuper plavi – and is
+stored with the name INA uses and the **time it was picked up**. A page without a price keeps the last known one.
+
+* Top of the page: a banner **Cijena plavog dizela – 1,43 € / l**, "Preuzeto s ina.hr 20. 10. 2026. u 04:12", with
+  all name variants listed; if stations differ, the range (1,43 € – 1,47 €).
+* Each card: the station's own price, name and date. The editor's station list shows it too.
+* Colours: blue on blue (like the fuel), checked in `tests/contrast.test.js` (9.5:1 light, 10:1 dark).
+* Prices appear after the first sync on the server (`php8.3 bin/sync-ina-hours.php --all`); the daily cron keeps
+  them and their date current.
+
 ## Sorting and map link
 
 * **Redoslijed**: *Naziv A–Ž* (default), *Naziv Ž–A*, *Po županiji*, in the Croatian alphabet
