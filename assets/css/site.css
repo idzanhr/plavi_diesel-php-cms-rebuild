@@ -139,7 +139,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .price-value { margin-top: .25rem; font-size: 2rem; font-weight: 800; line-height: 1.15; font-variant-numeric: tabular-nums; }
 .price-unit { font-size: 1.125rem; font-weight: 600; }
 .nw { white-space: nowrap; }
-/* "NOVA CIJENA" / "NAJAVA": inverted pill + bold line, so a change is impossible to miss */
+/* "NOVA CIJENA": inverted pill + bold line, so a change is impossible to miss */
 .price-change { margin-top: .5rem; font-size: 1.0625rem; font-weight: 700; }
 .price-flag { display: inline-block; margin-right: .375rem; border-radius: 999px; background: var(--price-fg); color: var(--price-bg); padding: .125rem .625rem; font-size: .875rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; }
 .price-new { font-size: .875rem; font-weight: 700; }

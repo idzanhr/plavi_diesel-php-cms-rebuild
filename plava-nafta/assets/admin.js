@@ -256,32 +256,18 @@
     return form;
   }
 
-  // ---- blue diesel price: what ina.hr shows, changes, and the announcement for next week
+  // ---- blue diesel price: what ina.hr shows and its recent changes (read-only, official prices only)
   function viewPrice() {
     view.replaceChildren(h("p", { class: "muted", text: "Učitavanje…" }));
     api("price").then(function (d) {
-      var a = d.announcement || {};
       var priced = state.stations.filter(function (s) { return s.blue_price; });
       var counts = {};
       priced.forEach(function (s) { counts[s.blue_price] = (counts[s.blue_price] || 0) + 1; });
-      var summary = Object.keys(counts).sort().map(function (p) { return p.replace(".", ",") + " € (" + counts[p] + " postaja)"; }).join(" · ");
-      var price = input({ inputmode: "decimal", placeholder: "npr. 1,43", value: a.price ? a.price.replace(".", ",") : "", "aria-label": "Nova cijena" });
-      var from = input({ type: "date", value: a.from || "", "aria-label": "Vrijedi od" });
-      var note = input({ maxlength: 120, placeholder: "npr. Odluka Vlade RH", value: a.note || "", "aria-label": "Napomena" });
-      function save(clear) {
-        api("price", clear ? { price: "" } : { price: price.value, from: from.value, note: note.value })
-          .then(function () { toast(clear ? "Najava uklonjena i objavljeno." : "Najava spremljena i objavljena."); viewPrice(); }, fail);
-      }
+      var summary = Object.keys(counts).sort().map(function (p) { return p.replace(".", ",") + " € (postaja: " + counts[p] + ")"; }).join(" · ");
       view.replaceChildren(
         h("div", { class: "panel" }, h("h2", { text: "Trenutno na ina.hr" }),
           h("p", { text: priced.length ? summary : "Još nema cijena – pokrenite sinkronizaciju s ina.hr (bin/sync-ina-hours.php --all)." }),
-          h("p", { class: "muted small", text: "Sinkronizacija čita „Goriva u ponudi” sa stranice svake postaje. Promjenu cijene stranica prikazuje kao „NOVA CIJENA” tjedan dana." })),
-        h("form", { class: "panel", onsubmit: function (e) { e.preventDefault(); save(false); } },
-          h("h2", { text: "Najava nove cijene" }),
-          h("p", { class: "muted small", text: "Kad tvrtka ili Vlada objavi novu cijenu za idući tjedan, upišite je ovdje. Do tog datuma stranica prikazuje „NAJAVA: od …”, a nakon njega upozorava ako ina.hr još prikazuje staru cijenu. Nestaje sama kad ina.hr prikaže istu cijenu ili tjedan dana nakon datuma." }),
-          h("div", { class: "form-grid" }, field("Nova cijena (€ / l)", price), field("Vrijedi od", from), field("Napomena (neobavezno)", note, "span2")),
-          h("div", { class: "inline" }, h("button", { class: "btn-primary", type: "submit" }, "Spremi i objavi"),
-            a.price ? h("button", { class: "btn-ghost", type: "button", onclick: function () { save(true); } }, "Ukloni najavu") : null)),
+          h("p", { class: "muted small", text: "Sinkronizacija čita „Goriva u ponudi” sa stranice svake postaje. Promjenu cijene stranica prikazuje kao „NOVA CIJENA” tjedan dana. Prikazuju se samo cijene objavljene na ina.hr." })),
         h("div", { class: "panel table-wrap" }, h("h2", { class: "pad", text: "Zadnje promjene cijene (ina.hr)" }), h("table", { class: "table" },
           h("thead", null, h("tr", null, ["Vrijeme", "Postaja", "Promjena"].map(function (t) { return h("th", { text: t }); }))),
           h("tbody", null, d.changes.length ? d.changes.map(function (c) {
@@ -328,7 +314,7 @@
 
   // ---- audit log
   var ACTIONS = { create: "Dodano", update: "Izmijenjeno", "delete": "Obrisano", "import": "Uvoz", publish: "Objava", password: "Promjena lozinke",
-    "recovery-codes": "Novi rezervni kodovi", price: "Promjena cijene (ina.hr)", "price-announce": "Najava cijene", "bunny-purge": "Bunny: čišćenje cachea", "totp-rotate": "Nova 2FA aplikacija", "ina-sync": "INA radno vrijeme", "ina-notice": "INA.hr: napomena o zatvaranju", "ina-close": "INA.hr: automatski zatvoreno", "ina-reopen": "INA.hr: automatski ponovno otvoreno", "totp-reset": "2FA resetirana (CLI)" };
+    "recovery-codes": "Novi rezervni kodovi", price: "Promjena cijene (ina.hr)", "bunny-purge": "Bunny: čišćenje cachea", "totp-rotate": "Nova 2FA aplikacija", "ina-sync": "INA radno vrijeme", "ina-notice": "INA.hr: napomena o zatvaranju", "ina-close": "INA.hr: automatski zatvoreno", "ina-reopen": "INA.hr: automatski ponovno otvoreno", "totp-reset": "2FA resetirana (CLI)" };
   function viewAudit() {
     view.replaceChildren(h("p", { class: "muted", text: "Učitavanje…" }));
     api("audit").then(function (d) {

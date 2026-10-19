@@ -32,7 +32,7 @@ final class Render
         return strtr($template, ['{{HEAD_ASSETS}}' => self::headAssets($webRoot)]);
     }
 
-    public static function index(string $template, array $rows, string $generatedAt, ?array $announcement = null): string
+    public static function index(string $template, array $rows, string $generatedAt): string
     {
         $counts = [];
         foreach ($rows as $s) if ($s['county'] !== '') $counts[$s['county']] = ($counts[$s['county']] ?? 0) + 1;
@@ -52,7 +52,7 @@ final class Render
 
         return strtr($template, [
             '{{SUMMARY}}' => $summary,
-            '{{PRICE_BANNER}}' => self::priceBanner($rows, date('Y-m-d H:i:s', strtotime($generatedAt)), $announcement),
+            '{{PRICE_BANNER}}' => self::priceBanner($rows, date('Y-m-d H:i:s', strtotime($generatedAt))),
             '{{CARDS}}' => implode("\n", array_map(fn($s) => self::card($s, $today), $rows)),
             '{{TOTAL}}' => (string) count($rows),
             '{{COUNTY_OPTIONS}}' => $options,
@@ -83,23 +83,14 @@ final class Render
         return ($d < 0 ? '−' : '+') . number_format(abs($d), 2, ',', '.') . ' €';
     }
 
-    private static function dayName(string $ymd): string
-    {
-        return ['ned', 'pon', 'uto', 'sri', 'čet', 'pet', 'sub'][(int) date('w', strtotime($ymd))];
-    }
-
     /**
-     * Banner at the top: the blue diesel price picked up from ina.hr, with the date; one price when
-     * all stations agree, otherwise the range. For a week after a change it says "NOVA CIJENA" with
-     * the previous price, and an announcement entered in the editor ("od uto 21. 10.") is shown
-     * before it takes effect – prices change weekly, agents should see it before customers call.
-     *
-     * @param array|null $ann ['price' => '1.43', 'from' => 'Y-m-d', 'note' => '…'] from Settings
+     * Banner at the top: the blue diesel price published on ina.hr, with the date it was picked up;
+     * one price when all stations agree, otherwise the range. For a week after ina.hr changes it, it
+     * says "NOVA CIJENA" with the previous price. Only prices shown on ina.hr appear here.
      */
-    public static function priceBanner(array $rows, ?string $now = null, ?array $ann = null): string
+    public static function priceBanner(array $rows, ?string $now = null): string
     {
         $now ??= date('Y-m-d H:i:s');
-        $today = substr($now, 0, 10);
         $priced = array_values(array_filter($rows, fn($s) => ($s['blue_price'] ?? '') !== ''));
         $unit = ' <span class="price-unit">/ l</span>';
         $lines = [];
@@ -131,22 +122,7 @@ final class Render
                 . ($min === $max ? '' : ' · cijena se razlikuje po postajama, vidi karticu postaje') . '</p>';
         }
 
-        // Announcement from the editor: before the date "NAJAVA", afterwards a warning while ina.hr
-        // still lists another price; hidden once ina.hr agrees or a week after the date.
-        if ($ann && ($ann['price'] ?? '') !== '' && ($ann['from'] ?? '') !== '') {
-            $when = self::dayName($ann['from']) . ' ' . self::date($ann['from']);
-            $note = ($ann['note'] ?? '') !== '' ? ' · ' . self::e($ann['note']) : '';
-            $annPrice = '<span class="nw">' . self::e(self::euro($ann['price'])) . $unit . '</span>';
-            if ($today < $ann['from']) {
-                array_unshift($lines, '<p class="price-change"><span class="price-flag">Najava</span> od ' . self::e($when) . ': ' . $annPrice
-                    . ($mode !== '' ? ' (sada ' . self::e(self::euro($mode)) . ')' : '') . $note . '</p>');
-            } elseif ($mode !== $ann['price'] && strtotime($today) - strtotime($ann['from']) <= self::NEW_PRICE_DAYS * 86400) {
-                // Still "Najava": "NOVA CIJENA" is reserved for a change ina.hr itself shows.
-                array_unshift($lines, '<p class="price-change"><span class="price-flag">Najava</span> vrijedi od ' . self::e($when) . ': ' . $annPrice . $note
-                    . ($mode !== '' ? ' – ina.hr još prikazuje ' . self::e(self::euro($mode)) : '') . '</p>');
-            }
-        }
-        if (!$priced && !$lines) return '';
+        if (!$priced) return '';
         return '<section class="price-banner" aria-labelledby="price-title">'
             . '<h2 id="price-title" class="price-title">Cijena plavog dizela</h2>'
             . ($value !== '' ? '<p class="price-value">' . $value . '</p>' : '')

@@ -51,9 +51,3 @@ CREATE TABLE IF NOT EXISTS audit_log (
   ip           TEXT NOT NULL DEFAULT '',
   created_at   TEXT NOT NULL
 );
-
--- Small key/value store (price announcement entered by the admin).
-CREATE TABLE IF NOT EXISTS settings (
-  name  TEXT NOT NULL PRIMARY KEY,
-  value TEXT NOT NULL
-);

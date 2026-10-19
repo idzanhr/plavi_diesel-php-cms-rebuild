@@ -73,27 +73,7 @@ try {
             Web::json(['result' => $r, 'log' => $lines, 'station' => Stations::find($id)]);
 
         case 'GET price':
-            Web::json(['announcement' => PlavaNafta\Settings::get('price_announcement'),
-                'changes' => Db::all("SELECT station_name, detail, created_at FROM audit_log WHERE action = 'price' ORDER BY id DESC LIMIT 30")]);
-
-        case 'POST price':
-            // Announced blue diesel price (weekly company / government change), shown on the site
-            // before it takes effect. Empty price = remove the announcement.
-            $price = str_replace(',', '.', trim((string) ($body['price'] ?? '')));
-            if ($price === '') {
-                PlavaNafta\Settings::delete('price_announcement');
-                Audit::log('price-announce', '', 'Najava uklonjena');
-            } else {
-                if (!is_numeric($price) || (float) $price < 0.3 || (float) $price > 5) throw new HttpError(422, 'Cijena mora biti između 0,30 i 5,00 €.');
-                $from = (string) ($body['from'] ?? '');
-                $d = \DateTimeImmutable::createFromFormat('!Y-m-d', $from);
-                if (!$d || $d->format('Y-m-d') !== $from) throw new HttpError(422, 'Upišite datum od kada vrijedi nova cijena.');
-                $ann = ['price' => number_format((float) $price, 2, '.', ''), 'from' => $from, 'note' => mb_substr(trim((string) ($body['note'] ?? '')), 0, 120)];
-                PlavaNafta\Settings::set('price_announcement', $ann);
-                Audit::log('price-announce', '', str_replace('.', ',', $ann['price']) . " € od $from" . ($ann['note'] !== '' ? " ({$ann['note']})" : ''));
-            }
-            Stations::publish();
-            Web::json(['announcement' => PlavaNafta\Settings::get('price_announcement')]);
+            Web::json(['changes' => Db::all("SELECT station_name, detail, created_at FROM audit_log WHERE action = 'price' ORDER BY id DESC LIMIT 30")]);
 
         case 'GET audit':
             Web::json(['entries' => Audit::recent(100)]);

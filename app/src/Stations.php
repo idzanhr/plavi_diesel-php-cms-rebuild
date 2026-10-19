@@ -278,7 +278,7 @@ final class Stations
         }
         self::atomicWrite("$dir/data/stations.json", json_encode(['generated_at' => $generatedAt, 'stations' => $rows], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n", true);
         $index = Render::page((string) file_get_contents("$templates/index.html"), $dir);
-        self::atomicWrite("$dir/index.html", Render::index($index, $rows, $generatedAt, Settings::get('price_announcement')), true);
+        self::atomicWrite("$dir/index.html", Render::index($index, $rows, $generatedAt), true);
         foreach (['privatnost', 'kolacici', '404'] as $page) {
             self::atomicWrite("$dir/$page.html", Render::page((string) file_get_contents("$templates/$page.html"), $dir), true);
         }

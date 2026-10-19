@@ -261,12 +261,11 @@ Blue diesel prices now change weekly (company / government decision), usually fr
   −0,04 €)** for 7 days (in words, not only colour), each changed card says *nova cijena, prije 1,47 €*, and every
   change is in the Dnevnik and under **Cijena → Zadnje promjene cijene**. After a week it becomes a quiet
   "Zadnja promjena …" line.
-* **Announcement** (editor → **Cijena** → *Najava nove cijene*): when the new price is announced, enter it with the
-  date it applies from (+ a note, e.g. *Odluka Vlade RH*). Before that date the banner shows **NAJAVA od uto
-  27. 10. 2026.: 1,39 € / l (sada 1,43 €)**; from that date, while ina.hr still lists the old price, **NAJAVA vrijedi
-  od … – ina.hr još prikazuje 1,43 €**. It disappears by itself when ina.hr shows the same price, or a week later.
+* **Only official prices**: the site shows nothing but what ina.hr publishes. A new price appears once the sync
+  picks it up from ina.hr; nothing is announced or entered by hand beforehand. The editor's **Cijena** tab is
+  read-only (current prices per station, recent changes).
 * **Timing**: run the sync right after midnight too, so a midnight change is picked up before the first calls,
-  and keep the nightly publish (it switches announcements over on their date):
+  and keep the nightly publish:
   ```
   * 0,4 * * *  php8.3 /home/crodesign93-plava-nafta/htdocs/plava-nafta.crodesign93.eu/bin/sync-ina-hours.php
   5 0 * * *    php8.3 /home/crodesign93-plava-nafta/htdocs/plava-nafta.crodesign93.eu/bin/publish.php
