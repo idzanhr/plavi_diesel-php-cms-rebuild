@@ -7,7 +7,7 @@ return [
     // MySQL / MariaDB (production). For local dev you can use:
     //   'dsn' => 'sqlite:' . __DIR__ . '/../var/plava-nafta.sqlite'
     'db' => [
-        'dsn'  => 'mysql:host=localhost;dbname=plava_nafta;charset=utf8mb4',
+        'dsn'  => 'mysql:host=127.0.0.1;dbname=plava_nafta;charset=utf8mb4', // CloudPanel: database name + user from the Databases tab
         'user' => 'plava_nafta',
         'pass' => 'change-me',
     ],

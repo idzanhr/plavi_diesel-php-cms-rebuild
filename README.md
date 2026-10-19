@@ -52,30 +52,35 @@ re-generates all public pages, `stations.json` and their `.gz` copies atomically
 
 ## Deploy on CloudPanel (nginx + PHP-FPM)
 
-1. **Add Site → Create a PHP Site**: domain `plava-nafta.crodesign93.eu`, PHP **8.3**, a site user (e.g. `plavanafta`).
-   Install the free Let's Encrypt certificate under **SSL/TLS**.
-2. **Databases → Add Database** (MySQL): note the name, user and password.
-3. SSH in **as the site user** (not root, so the CMS can write its files) and clone into the site folder:
+The site already exists in CloudPanel (site user `crodesign93-plava-nafta`). Its domain folder
+`/home/crodesign93-plava-nafta/htdocs/plava-nafta.crodesign93.eu` only holds CloudPanel's placeholder `index.php`.
+
+1. **SSL/TLS**: install the free Let's Encrypt certificate (if not done yet).
+2. **Databases → Add Database** (MySQL): note the database name, user and password.
+3. **SSH/FTP**: set a password or add your SSH key for the site user, then log in **as the site user** (not root,
+   so the CMS can write its pages) and clone the repo **into** the existing domain folder:
    ```
-   cd ~/htdocs
-   rm -rf plava-nafta.crodesign93.eu            # the empty default folder CloudPanel created
-   git clone https://github.com/idzanhr/plavi_diesel-php-cms-rebuild.git plava-nafta.crodesign93.eu
-   # (private repo? add the site user's SSH key as a read-only Deploy key and clone via git@github.com:…)
-   cd plava-nafta.crodesign93.eu
+   ssh crodesign93-plava-nafta@<server-ip>
+   cd ~/htdocs/plava-nafta.crodesign93.eu
+   rm index.php                                                 # CloudPanel's placeholder ("ls -A" must now be empty)
+   git clone https://github.com/idzanhr/plavi_diesel-php-cms-rebuild.git .
+   # private repo? add ~/.ssh/id_ed25519.pub of the site user as a read-only Deploy key, then
+   #   git clone git@github.com:idzanhr/plavi_diesel-php-cms-rebuild.git .
    cp app/config.example.php app/config.php
    php -r 'echo base64_encode(random_bytes(32)), PHP_EOL;'     # → paste as app_key
-   nano app/config.php                                          # db dsn/user/pass + app_key
+   nano app/config.php                                          # dsn mysql:host=127.0.0.1;dbname=…, user, pass, app_key
    chmod 600 app/config.php
    php8.3 bin/install.php                                       # tables, 129 stations, admin, public pages
    ```
+   Use the same PHP version as in the site's **Settings** (`php8.3`, `php8.4`, …).
    The **Root Directory stays CloudPanel's default** (the domain folder itself).
 4. **Vhost**: replace the whole editor content with [`deploy/cloudpanel-vhost.conf`](deploy/cloudpanel-vhost.conf)
-   (change the domain inside if it differs) and save – CloudPanel tests and reloads nginx.
-   Leave **Varnish cache off** for this site.
+   (the domain is already `plava-nafta.crodesign93.eu`) and save – CloudPanel tests and reloads nginx.
+   **Varnish Cache**: leave it off for this site (the pages are static and pre-compressed already).
 5. Open `https://plava-nafta.crodesign93.eu/plava-nafta/`, log in, **scan the QR code**, enter the code and
    **save the 8 recovery codes**. Optionally set `'allow_web_enrollment' => false` afterwards.
-6. **Cron Jobs** (as the site user) – optional automatic working hours from ina.hr:
-   `* 4 * * *   php8.3 /home/plavanafta/htdocs/plava-nafta.crodesign93.eu/bin/sync-ina-hours.php`
+6. **Cron Jobs** – optional automatic working hours from ina.hr:
+   `* 4 * * *   php8.3 /home/crodesign93-plava-nafta/htdocs/plava-nafta.crodesign93.eu/bin/sync-ina-hours.php`
 
 **Updating the code later:** `git pull && php8.3 bin/publish.php`. Generated files (`*.html` in the root,
 `data/stations.json`, `*.gz`) are git-ignored, so live CMS edits never conflict with a pull.
